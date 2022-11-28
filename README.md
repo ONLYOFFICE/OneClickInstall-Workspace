@@ -10,20 +10,7 @@ It has two editions - [Community, Enterprise](#onlyoffice-docs-editions).
 
 `workspace-enterprise-install.sh` installs ONLYOFFICE Workspace Enterprise Edition.
 
-## Functionality
-
-ONLYOFFICE Document Server includes the following editors:
-
-* ONLYOFFICE Document Editor
-* ONLYOFFICE Spreadsheet Editor
-* ONLYOFFICE Presentation Editor
-
-The editors allow you to create, edit, save and export text, spreadsheet and presentation documents and additionally have the features:
-
-* Collaborative editing
-* Hieroglyph support
-* Reviewing
-* Spell-checking
+## [Functionality](https://www.onlyoffice.com/workspace.aspx)
 
 ## Recommended system requirements
 
