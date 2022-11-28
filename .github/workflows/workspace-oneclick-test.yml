@@ -1,0 +1,168 @@
+name: OneClickInstall scripts testing
+
+#on:
+#  pull_request:
+#    types: [opened, reopened, edited]
+#    paths:
+#    - 'sub-project/**'
+
+on:
+  schedule:
+    - cron: '00 21 * * 6'  # At 21:00 on Saturday.
+    
+env: 
+  BOX_DISTRIBUTION: generic
+  RUNNER_IMAGE: ubuntu-22-04-x64
+  RUNNER_REGION: fra1
+  RUNNER_SIZE: s-4vcpu-8gb-intel
+
+jobs:
+  spin-up:
+    name: Make ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    outputs: 
+      instance-name: ${{ steps.get-name.outputs.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: 
+          - gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-centos8s-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-centos9s-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-debian9-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-debian10-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-ubuntu1604-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-ubuntu1804-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-ubuntu2004-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-ubuntu2204-${{ github.run_id }}-${{ github.run_number }}
+    
+    steps:
+    # Install Doctl
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DO_ACCESS_TOKEN }}
+        
+    - name: Get instance name
+      id: get-name
+      run: echo "name=${{ matrix.name }}" >> $GITHUB_OUTPUT
+        
+      # Template for cloud-init install vagrant and virtualbox
+    - name: Template out file
+      run: |
+        cat << EOF > ./user-data
+        #!/bin/bash
+        
+        #install virtualbox latest version
+        apt -y update
+        apt -y install jq curl virtualbox
+
+        #install vagrant latest version
+        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+        apt update -y 
+        apt install vagrant -y
+        
+        useradd -m gha-runner 
+        echo "gha-runner ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/gha-runner
+        export RUNNER_CFG_PAT="${{ secrets.ACCESS_TOKEN }}"
+        cd /home/gha-runner
+        curl -s https://raw.githubusercontent.com/actions/runner/main/scripts/create-latest-svc.sh | sudo -E -s -u gha-runner bash -s ${{ github.repository }}
+        EOF
+        
+    # Create the VM
+    - name: Create vm for ${{ matrix.name }}
+      run: doctl compute droplet create ${{ matrix.name }} --image ${RUNNER_IMAGE} --region ${RUNNER_REGION} --size ${RUNNER_SIZE} --wait --user-data-file ./user-data > /dev/null
+
+    - name: Wait for VM to come online
+      run: | 
+        sleep 30
+        for ATTEMPT in {1..10};
+        do
+          echo "#### Attempt $ATTEMPT ####"
+          if curl -s -X GET https://api.github.com/repos/${{ github.repository }}/actions/runners -H "accept: application/json" -H "authorization: token ${{ secrets.ACCESS_TOKEN }}" | jq -er '.runners[] | select(.name == "${{ matrix.name }}") | has("status")';
+          then
+            exit 0
+          fi
+          sleep 30
+        done
+        exit 1
+
+  vagrant-up:
+    needs: spin-up
+    name: "Run tests on ${{ matrix.boxes }}"
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: 'OneClickInstall-Workspace/tests/vagrant'
+    strategy:
+      fail-fast: false
+      matrix:
+        boxes: 
+          - centos7
+          - centos8s
+          - centos9s
+          - debian9
+          - debian10
+          - debian11
+          - ubuntu1604
+          - ubuntu1804
+          - ubuntu2004
+          - ubuntu2204
+
+    steps:
+    - name: Checkout code      
+      uses: actions/checkout@v2
+      with: 
+        path: 'vagrant-test'
+ 
+    - name: Set up Python 3.
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Replace os image
+      run: sed -i "s!%BOX_IMAGE%!$BOX_DISTRIBUTION/${{ matrix.boxes }}!" Vagrantfile
+        
+    - name: Show Vagrant version
+      run: vagrant --version
+
+    - name: Run vagrant up
+      run: vagrant up
+
+  tear-down:
+    name: Destroy instance ${{ matrix.name }}
+    needs: [vagrant-up]
+    if: always()
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        name: 
+          - gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-centos8s-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-centos9s-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-debian9-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-debian10-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-ubuntu1604-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-ubuntu1804-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-ubuntu2004-${{ github.run_id }}-${{ github.run_number }}
+          - gha-runner-ubuntu2204-${{ github.run_id }}-${{ github.run_number }}
+        
+    steps:
+    # Install Doctl
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DO_ACCESS_TOKEN }}
+
+    # Create the VM
+    - name: Delete vm ${{ matrix.name }}
+      run: doctl compute droplet delete ${{ matrix.name }} -f
+
+    - name: Delete the runner
+      run: | 
+        RUNNER_ID=$(curl -s -X GET https://api.github.com/repos/${{ github.repository }}/actions/runners -H "accept: application/json" -H "authorization: token ${{ secrets.ACCESS_TOKEN }}" | jq -er '.runners[] | select(.name == "${{ matrix.name }}").id')
+        curl -s -X DELETE https://api.github.com/repos/${{ github.repository }}/actions/runners/$RUNNER_ID -H "accept: application/json" -H "authorization: token ${{ secrets.ACCESS_TOKEN }}"
