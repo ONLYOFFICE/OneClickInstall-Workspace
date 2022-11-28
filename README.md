@@ -12,6 +12,12 @@ It has two editions - [Community, Enterprise](#onlyoffice-docs-editions).
 
 ## [Functionality](https://www.onlyoffice.com/workspace.aspx)
 
+* Documents
+* Mails
+* CRM
+* PROJECTS
+* CALENDAR
+
 ## Recommended system requirements
 
 * **CPU**: at least 4-core (6-core recommended)
