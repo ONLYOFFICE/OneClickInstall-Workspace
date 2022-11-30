@@ -3,7 +3,7 @@ name: OneClickInstall scripts testing
 on:
   pull_request:
     types: [opened, reopened, edited]
-      paths-ignore:
+    paths-ignore:
       - '.github/**'
       - 'tests/**'
       - '**/README.md'
