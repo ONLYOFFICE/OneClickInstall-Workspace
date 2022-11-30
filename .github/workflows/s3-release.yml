@@ -41,5 +41,5 @@ jobs:
                 --include="workspace-install.sh" \
                 --include="workspace-enterprise-install.sh"
       
-      - name: Invalidate CLOUDFRONT cache
+      - name: Invalidate AWS CLOUDFRONT cache
         run: aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_DISTRIBUTION_ID }} --paths "/install/*"
