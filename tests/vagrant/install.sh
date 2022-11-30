@@ -5,30 +5,23 @@ set -e
 while [ "$1" != "" ]; do
 	case $1 in
 
-		-d | --docker_installation )
+	        -pi | --production-install )
 			if [ "$2" != "" ]; then
-				DOCKER_INSTALLATION=$2
+				PRODUCTION_INSTALL=$2
 				shift
 			fi
 		;;
 
-	        -p | --production_test )
-			if [ "$2" != "" ]; then
-				PRODUCTION_TEST=$2
-				shift
-			fi
-		;;
-
-		-l | --local_test )
+		-li | --local-install )
                         if [ "$2" != "" ]; then
-                                LOCAL_TEST=$2
+                                LOCAL_INSTALL=$2
                                 shift
                         fi
                 ;;
 
-		-u | --update_test )
+		-lu | --local-update )
                         if [ "$2" != "" ]; then
-                                UPDATE_TEST=$2
+                                LOCAL_UPDATE=$2
                                 shift
                         fi
                 ;;
@@ -138,9 +131,22 @@ function prepare_vm() {
 #   Script log
 #############################################################################################
 function install_workspace() {
-  wget https://download.onlyoffice.com/install/workspace-install.sh 
-  bash workspace-install.sh --skiphardwarecheck true --makeswap false <<< "N
-  "
+		if [ "${PRODUCTION_INSTALL}" == 'true' ]; then
+                        wget https://download.onlyoffice.com/install/workspace-install.sh
+                        bash workspace-install.sh --skiphardwarecheck true --makeswap false <<< "N
+                        "
+                        rm -rf *.sh
+                fi
+
+                if [ "${LOCAL_INSTALL}" == 'true' ]; then
+                        bash workspace-install.sh --skiphardwarecheck true --makeswap false --localscripts true <<< "N
+                        "
+                fi
+
+                if [ "${LOCAL_UPDATE}" == 'true' ]; then
+                        bash workspace-install.sh --skiphardwarecheck true --makeswap false --localscripts true --update true <<< "N
+                        "
+                fi
 }
 
 #############################################################################################
