@@ -135,7 +135,6 @@ function install_workspace() {
                         wget https://download.onlyoffice.com/install/workspace-install.sh
                         bash workspace-install.sh --skiphardwarecheck true --makeswap false <<< "N
                         "
-                        rm -rf *.sh
                 fi
 
                 if [ "${LOCAL_INSTALL}" == 'true' ]; then
