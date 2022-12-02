@@ -128,8 +128,13 @@ jobs:
       if: ${{ github.event_name == 'shedule' }}
       run: |
               set -eux
-
-              TEST_CASE=--production-install DISTR=generic OS=${{ matrix.boxes }} vagrant up
+              
+              TEST_CASE='--production-install' \
+              DISTR='generic' \
+              OS='${{ matrix.boxes }}' \
+              DOWNLOAD_SCRIPT='-ds true' \
+              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
+              vagrant up
               sleep 10
               vagrant destroy --force
 
@@ -138,7 +143,12 @@ jobs:
       run: |
               set -eux
 
-              TEST_CASE=--local-install DISTR=generic OS=${{ matrix.boxes }} vagrant up
+              TEST_CASE='--local-install' \
+              DISTR='generic' \
+              OS='${{ matrix.boxes }}' \
+              DOWNLOAD_SCRIPT='-ds false' \
+              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true'" \
+              vagrant up
               sleep 10
               vagrant destroy --force
 

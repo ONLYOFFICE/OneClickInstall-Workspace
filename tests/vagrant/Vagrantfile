@@ -3,7 +3,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.provider "virtualbox" do |v|
              v.customize ["modifyvm", :id, "--memory", 6144] #<= 6144 equals 6GB total memory.
-             v.customize ["modifyvm", :id, "--cpus", 4] #<= 4 equals 4cpu.
+             v.customize ["modifyvm", :id, "--cpus", 4] #<= equals 4cpu.
              v.customize ["modifyvm", :id, "--ioapic", "on"]
     end
 
@@ -12,10 +12,10 @@ Vagrant.configure("2") do |config|
     config.vm.hostname = "host4test"
 
     if ENV['TEST_CASE'] != '--production-install'
-       config.vm.provision "file", source: "../../../OneClickInstall-Workspace/.", destination: "/home/vagrant"
+       config.vm.provision "file", source: "../../../OneClickInstall-Workspace/.", destination: "/tmp/workspace/"
     end
 
-    config.vm.provision "shell", path: './install.sh', :args => "#{ENV['TEST_CASE']} true"
+    config.vm.provision "shell", path: './install.sh', :args => "#{ENV['DOWNLOAD_SCRIPT']} #{ENV['ARGUMENTS']}"
 
     # Prevent SharedFoldersEnableSymlinksCreate errors
     config.vm.synced_folder ".", "/vagrant", disabled: true

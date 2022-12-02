@@ -5,6 +5,21 @@ set -e
 while [ "$1" != "" ]; do
 	case $1 in
 
+		-ds | --download-scripts )
+                        if [ "$2" != "" ]; then
+                                DOWNLOAD_SCRIPTS=$2
+                                shift
+                        fi
+                ;;
+
+                -arg | --arguments )
+                        if [ "$2" != "" ]; then
+                                ARGUMENTS=$2
+                                shift
+                        fi
+                ;;
+
+
 	        -pi | --production-install )
 			if [ "$2" != "" ]; then
 				PRODUCTION_INSTALL=$2
@@ -131,21 +146,12 @@ function prepare_vm() {
 #   Script log
 #############################################################################################
 function install_workspace() {
-		if [ "${PRODUCTION_INSTALL}" == 'true' ]; then
-                        wget https://download.onlyoffice.com/install/workspace-install.sh
-                        bash workspace-install.sh --skiphardwarecheck true --makeswap false <<< "N
-                        "
-                fi
-
-                if [ "${LOCAL_INSTALL}" == 'true' ]; then
-                        bash workspace-install.sh --skiphardwarecheck true --makeswap false --localscripts true <<< "N
-                        "
-                fi
-
-                if [ "${LOCAL_UPDATE}" == 'true' ]; then
-                        bash workspace-install.sh --skiphardwarecheck true --makeswap false --localscripts true --update true <<< "N
-                        "
-                fi
+	if [ "${DOWNLOAD_SCRIPTS}" == 'true' ]; then
+            wget https://download.onlyoffice.com/install/workspace-install.sh
+        fi
+        
+	bash workspace-install.sh ${ARGUMENTS} <<< "N
+        "
 }
 
 #############################################################################################
@@ -218,6 +224,7 @@ main() {
   prepare_vm
   check_hw
   install_workspace
+  sleep 120
   healthcheck_systemd_services
   healthcheck_supervisor_services
   healthcheck_general_status
