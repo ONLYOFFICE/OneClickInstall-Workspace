@@ -131,6 +131,11 @@ function prepare_vm() {
 	  fi
   fi
 
+  if [ -d /tmp/workspace ]; then
+          rm -rf /home/vagrant/*
+          mv /tmp/workspace/* /home/vagrant
+  fi
+
   echo '127.0.0.1 host4test' | sudo tee -a /etc/hosts   
   echo "${COLOR_GREEN}☑ PREPAVE_VM: Hostname was setting up${COLOR_RESET}"   
 
