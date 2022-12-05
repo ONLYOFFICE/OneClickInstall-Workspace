@@ -5,30 +5,38 @@ set -e
 while [ "$1" != "" ]; do
 	case $1 in
 
-		-d | --docker_installation )
-			if [ "$2" != "" ]; then
-				DOCKER_INSTALLATION=$2
-				shift
-			fi
-		;;
-
-	        -p | --production_test )
-			if [ "$2" != "" ]; then
-				PRODUCTION_TEST=$2
-				shift
-			fi
-		;;
-
-		-l | --local_test )
+		-ds | --download-scripts )
                         if [ "$2" != "" ]; then
-                                LOCAL_TEST=$2
+                                DOWNLOAD_SCRIPTS=$2
                                 shift
                         fi
                 ;;
 
-		-u | --update_test )
+                -arg | --arguments )
                         if [ "$2" != "" ]; then
-                                UPDATE_TEST=$2
+                                ARGUMENTS=$2
+                                shift
+                        fi
+                ;;
+
+
+	        -pi | --production-install )
+			if [ "$2" != "" ]; then
+				PRODUCTION_INSTALL=$2
+				shift
+			fi
+		;;
+
+		-li | --local-install )
+                        if [ "$2" != "" ]; then
+                                LOCAL_INSTALL=$2
+                                shift
+                        fi
+                ;;
+
+		-lu | --local-update )
+                        if [ "$2" != "" ]; then
+                                LOCAL_UPDATE=$2
                                 shift
                         fi
                 ;;
@@ -123,6 +131,11 @@ function prepare_vm() {
 	  fi
   fi
 
+  if [ -d /tmp/workspace ]; then
+          rm -rf /home/vagrant/*
+          mv /tmp/workspace/* /home/vagrant
+  fi
+
   echo '127.0.0.1 host4test' | sudo tee -a /etc/hosts   
   echo "${COLOR_GREEN}☑ PREPAVE_VM: Hostname was setting up${COLOR_RESET}"   
 
@@ -138,9 +151,12 @@ function prepare_vm() {
 #   Script log
 #############################################################################################
 function install_workspace() {
-  wget https://download.onlyoffice.com/install/workspace-install.sh 
-  bash workspace-install.sh --skiphardwarecheck true --makeswap false <<< "N
-  "
+	if [ "${DOWNLOAD_SCRIPTS}" == 'true' ]; then
+            wget https://download.onlyoffice.com/install/workspace-install.sh
+        fi
+        
+	bash workspace-install.sh ${ARGUMENTS} <<< "N
+        "
 }
 
 #############################################################################################
@@ -213,6 +229,7 @@ main() {
   prepare_vm
   check_hw
   install_workspace
+  sleep 120
   healthcheck_systemd_services
   healthcheck_supervisor_services
   healthcheck_general_status

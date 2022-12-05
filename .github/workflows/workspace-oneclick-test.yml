@@ -1,12 +1,13 @@
 name: OneClickInstall scripts testing
 
-#on:
-#  pull_request:
-#    types: [opened, reopened, edited]
-#    paths:
-#    - 'sub-project/**'
-
 on:
+  pull_request:
+    types: [opened, reopened, edited]
+    paths-ignore:
+      - '.github/**'
+      - 'tests/**'
+      - '**/README.md'
+
   schedule:
     - cron: '00 21 * * 6'  # At 21:00 on Saturday.
     
@@ -120,14 +121,36 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Replace os image
-      run: sed -i "s!%BOX_IMAGE%!$BOX_DISTRIBUTION/${{ matrix.boxes }}!" Vagrantfile
-        
     - name: Show Vagrant version
       run: vagrant --version
 
-    - name: Run vagrant up
-      run: vagrant up
+    - name: Install from production scripts
+      if: ${{ github.event_name == 'shedule' }}
+      run: |
+              set -eux
+              
+              TEST_CASE='--production-install' \
+              DISTR='generic' \
+              OS='${{ matrix.boxes }}' \
+              DOWNLOAD_SCRIPT='-ds true' \
+              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
+              vagrant up
+              sleep 10
+              vagrant destroy --force
+
+    - name: Install from local scripts
+      if:  ${{ github.event_name == 'pull_request' }}
+      run: |
+              set -eux
+
+              TEST_CASE='--local-install' \
+              DISTR='generic' \
+              OS='${{ matrix.boxes }}' \
+              DOWNLOAD_SCRIPT='-ds false' \
+              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true'" \
+              vagrant up
+              sleep 10
+              vagrant destroy --force
 
   tear-down:
     name: Destroy instance ${{ matrix.name }}
