@@ -45,4 +45,12 @@ jobs:
         run: |
              aws cloudfront create-invalidation \
                 --distribution-id ${{ secrets.AWS_DISTRIBUTION_ID }} \
-                --paths "/install/*"
+                --paths \
+                "/install/install-RedHat/*" \
+                "/install/install-Debian/*" \
+                "/install/install.sh" \
+                "/install/install-Debian.sh" \
+                "/install/install-RedHat.sh" \
+                "/install/group-install.sh" \
+                "/install/workspace-install.sh" \
+                "/install/workspace-enterprise-install.sh"
