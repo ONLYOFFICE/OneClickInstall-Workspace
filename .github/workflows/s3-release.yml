@@ -1,0 +1,56 @@
+name: Upload scripts on S3 
+
+on:    
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**/README.md'
+      - '**/LICENSE'
+      - '.github/**'
+
+jobs:
+  release:
+    name: Scripts release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+       
+      - name: Upload scripts
+        run: | 
+             aws s3 cp . ${{ secrets.AWS_BUCKER_URL }}/install/ \
+                --recursive \
+                --acl public-read \
+                --content-type application/x-sh \
+                --metadata-directive REPLACE \
+                --exclude "*" \
+                --include="install-RedHat/*" \
+                --include="install-Debian/*" \
+                --include="install.sh" \
+                --include="install-Debian.sh" \
+                --include="install-RedHat.sh" \
+                --include="group-install.sh" \
+                --include="workspace-install.sh" \
+                --include="workspace-enterprise-install.sh"
+      
+      - name: Invalidate AWS CLOUDFRONT cache
+        run: |
+             aws cloudfront create-invalidation \
+                --distribution-id ${{ secrets.AWS_DISTRIBUTION_ID }} \
+                --paths \
+                "/install/install-RedHat/*" \
+                "/install/install-Debian/*" \
+                "/install/install.sh" \
+                "/install/install-Debian.sh" \
+                "/install/install-RedHat.sh" \
+                "/install/group-install.sh" \
+                "/install/workspace-install.sh" \
+                "/install/workspace-enterprise-install.sh"
