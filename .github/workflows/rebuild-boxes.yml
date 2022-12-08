@@ -1,0 +1,69 @@
+name: Rebuild Boxes
+
+push:
+    branches:
+      - master
+    paths-ignore:
+      - '**/README.md'
+      - '**/LICENSE'
+      - '.github/**'
+      - 'tests/**'
+
+env: 
+  BOX_DISTRIBUTION: generic
+
+jobs:
+  vagrant-up:
+    name: "${{ matrix.boxes }}-${{ matrix.installation }} installation"
+    runs-on: macos-12
+    defaults:
+      run:
+        working-directory: './tests/vagrant'
+    strategy:
+      fail-fast: false
+      matrix:
+        boxes: 
+          - centos7
+          - centos8s
+          - centos9s
+          - debian9
+          - debian10
+          - debian11
+          - ubuntu1604
+          - ubuntu1804
+          - ubuntu2004
+          - ubuntu2204
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    
+    - name: Show Vagrant version
+      run: vagrant --version
+
+    - name: Rebuild all boxes
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 2
+        retry_on: error
+        command: |
+                set -eux
+
+                date=$(date +%F)
+                vagrant cloud auth login --token ${{ secrets.VAGRANT_TOKEN }}
+                sleep 300
+                vagrant up >>> <REBUILD_COMAND>
+                sleep 300
+                vagrant package --output repacked_${{ matrix.boxes }}.box
+                vagrant cloud publish \
+                   danilapog/${{ matrix.boxes }} \
+                   $date virtualbox repacked_${{ matrix.boxes }}.box \
+                   -d "A really cool box to download and use" \
+                   --version-description "A cool version" \
+                   --release --short-description "Download me!" \
+                   --force \
+                   --no-private
