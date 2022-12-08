@@ -1,6 +1,7 @@
 name: Rebuild Boxes
 
-push:
+on:
+  push:
     branches:
       - master
     paths-ignore:
