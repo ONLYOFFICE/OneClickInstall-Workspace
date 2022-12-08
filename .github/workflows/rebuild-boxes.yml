@@ -61,7 +61,7 @@ jobs:
                 sleep 300
                 vagrant package --output repacked_${{ matrix.boxes }}.box
                 vagrant cloud publish \
-                   danilapog/${{ matrix.boxes }} \
+                   onlyoffice/${{ matrix.boxes }} \
                    $date virtualbox repacked_${{ matrix.boxes }}.box \
                    -d "A really cool box to download and use" \
                    --version-description "A cool version" \
