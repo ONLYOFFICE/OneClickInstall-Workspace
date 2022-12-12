@@ -2,8 +2,8 @@ Vagrant.configure("2") do |config|
     config.vm.box = "#{ENV['DISTR']}/#{ENV['OS']}"
 
     config.vm.provider "virtualbox" do |v|
-             v.customize ["modifyvm", :id, "--memory", 6144] #<= 6144 equals 6GB total memory.
-             v.customize ["modifyvm", :id, "--cpus", 4] #<= equals 4cpu.
+             v.customize ["modifyvm", :id, "--memory", "#{ENV['RAM']}"] #<= total RAM.
+             v.customize ["modifyvm", :id, "--cpus", "#{ENV['CPU']}"] #<= total CPU.
              v.customize ["modifyvm", :id, "--ioapic", "on"]
     end
 

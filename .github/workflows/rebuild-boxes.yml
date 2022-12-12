@@ -13,13 +13,14 @@ on:
 env: 
   BOX_DISTRIBUTION: generic
 
+defaults:
+  run:
+    working-directory: 'tests/vagrant'
+
 jobs:
   vagrant-up:
     name: "Rebuild box with ${{ matrix.boxes }}"
     runs-on: macos-12
-    defaults:
-      run:
-        working-directory: './tests/vagrant'
     strategy:
       fail-fast: false
       matrix:
@@ -50,21 +51,37 @@ jobs:
       uses: nick-fields/retry@v2
       with:
         max_attempts: 2
+        timeout_minutes: 240
         retry_on: error
         command: |
                 set -eux
-
-                date=$(date +%F)
+                
+                cd tests/vagrant
+                export date=$(date +%F)
                 vagrant cloud auth login --token ${{ secrets.VAGRANT_TOKEN }}
                 sleep 300
-                vagrant up >>> <REBUILD_COMAND>
+                   TEST_CASE='--production-install' \
+                   DISTR='${{ matrix.distributor }}' \
+                   OS='${{ matrix.boxes }}' \
+                   DOWNLOAD_SCRIPT='-ds true' \
+                   RAM='8192' \
+                   CPU='4' \
+                   ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
+                   vagrant up
                 sleep 300
                 vagrant package --output repacked_${{ matrix.boxes }}.box
                 vagrant cloud publish \
                    onlyoffice/${{ matrix.boxes }} \
                    $date virtualbox repacked_${{ matrix.boxes }}.box \
-                   -d "A really cool box to download and use" \
-                   --version-description "A cool version" \
-                   --release --short-description "Download me!" \
+                   -d "Box with pre-installed workspace" \
+                   --version-description "<version>" \
+                   --release --short-description "Boxes for update testing" \
                    --force \
                    --no-private
+        on_retry_command: |
+               set -eux
+
+               echo "RUN CLEAN UP: Remove repacked box and destroy"
+               cd tests/vagrant
+               rm -rf repacked_${{ matrix.boxes }}.box
+               vagrant destroy --force
