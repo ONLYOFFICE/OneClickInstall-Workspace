@@ -61,7 +61,7 @@ jobs:
                 vagrant cloud auth login --token ${{ secrets.VAGRANT_TOKEN }}
                 sleep 300
                    TEST_CASE='--production-install' \
-                   DISTR='${{ matrix.distributor }}' \
+                   DISTR='generic' \
                    OS='${{ matrix.boxes }}' \
                    DOWNLOAD_SCRIPT='-ds true' \
                    RAM='8192' \
