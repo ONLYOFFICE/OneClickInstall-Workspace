@@ -74,7 +74,7 @@ jobs:
                    onlyoffice/${{ matrix.boxes }} \
                    $date virtualbox repacked_${{ matrix.boxes }}.box \
                    -d "Box with pre-installed workspace" \
-                   --version-description "<version>" \
+                   --version-description "Workspace <version>" \
                    --release --short-description "Boxes for update testing" \
                    --force \
                    --no-private
