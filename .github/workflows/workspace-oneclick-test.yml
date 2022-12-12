@@ -152,6 +152,23 @@ jobs:
               sleep 10
               vagrant destroy --force
 
+    - name: Update from local scripts
+      if:  ${{ github.event_name == 'pull_request' }}
+      run: |
+              set -eux
+
+              TEST_CASE='--local-update' \
+              DISTR='onlyoffice' \
+              RAM='6450' \
+              CPU='4' \
+              OS='${{ matrix.boxes }}' \
+              DOWNLOAD_SCRIPT='-ds false' \
+              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true --update true'" \
+              vagrant up
+              sleep 10
+              vagrant destroy --force
+
+
   tear-down:
     name: Destroy instance ${{ matrix.name }}
     needs: [vagrant-up]
