@@ -125,7 +125,7 @@ jobs:
       run: vagrant --version
 
     - name: Install from production scripts
-      if: ${{ github.event_name == 'shedule' }}
+      if: ${{ github.event_name == 'schedule' }}
       run: |
               set -eux
               
