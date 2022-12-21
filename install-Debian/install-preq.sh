@@ -118,7 +118,7 @@ echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/$D
 # setup msttcorefonts
 echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
 
-MYSQL_REPO_VERSION="$(curl https://dev.mysql.com/downloads/repo/apt/ | grep -oP 'mysql-apt-config_\K.*' | grep -o '^[^_]*' | head -n1)"
+MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP 'mysql-apt-config_\K.*' | grep -o '^[^_]*' | sort --version-sort --field-separator=. | tail -n1)"
 MYSQL_PACKAGE_NAME="mysql-apt-config_${MYSQL_REPO_VERSION}_all.deb"
 if ! dpkg -l | grep -q "mysql-server"; then
 

@@ -113,7 +113,7 @@ END
 
 #add mysql repo
 [ "$REV" != "7" ] && dnf remove -y @mysql && dnf module -y reset mysql && dnf module -y disable mysql
-MYSQL_REPO_VERSION="$(curl https://dev.mysql.com/downloads/repo/yum/ | grep -oP "mysql80-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | head -n1)"
+MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP "mysql80-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | sort | tail -n1)"
 yum localinstall -y https://repo.mysql.com/mysql80-community-release-el${REV}-${MYSQL_REPO_VERSION}.noarch.rpm || true
 
 #add mono repo
