@@ -54,6 +54,7 @@ if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 	fi
 	REV_PARTS=(${REV//\./ });
 	REV=${REV_PARTS[0]};
+	DOTNET_HOST="dotnet-host-6.0*"
 fi
 
 #Add repositories: EPEL, REMI and RPMFUSION
@@ -91,7 +92,7 @@ if rpm -q rabbitmq-server; then
 fi
 
 #add dotnet repo
-if [ $MONOREV = "7" ] || [[ $DIST != "redhat" && $REV = "8" ]]; then
+if [ $REV = "7" ] || [[ $DIST != "redhat" && $REV = "8" ]]; then
 	rpm -Uvh https://packages.microsoft.com/config/centos/$REV/packages-microsoft-prod.rpm || true
 elif rpm -q packages-microsoft-prod; then
 	yum remove -y packages-microsoft-prod dotnet*
@@ -165,7 +166,7 @@ yum -y install epel-release \
 			make \
 			SDL2 $POWERTOOLS_REPO \
 			snapd \
-			dotnet-sdk-6.0
+			dotnet-sdk-6.0 $DOTNET_HOST
 			
 yum versionlock mono-complete
 
