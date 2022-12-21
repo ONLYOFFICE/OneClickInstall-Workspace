@@ -75,11 +75,8 @@ elif [ "$REV" = "7" ] ; then
 fi
 
 #add rabbitmq & erlang repo
-wget https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh -O rabbitmq_script.rpm.sh
-wget https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh -O erlang_script.rpm.sh
-chmod +x rabbitmq_script.rpm.sh erlang_script.rpm.sh
-os=centos dist=$MONOREV ./rabbitmq_script.rpm.sh && os=centos dist=$MONOREV ./erlang_script.rpm.sh
-rm -f rabbitmq_script.rpm.sh erlang_script.rpm.sh
+curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$MONOREV bash
+curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$MONOREV bash
 
 if rpm -q rabbitmq-server; then
 	if [ "$(repoquery --installed rabbitmq-server --qf '%{ui_from_repo}' | sed 's/@//')" != "$(repoquery rabbitmq-server --qf='%{ui_from_repo}')" ]; then
