@@ -123,6 +123,10 @@ function prepare_vm() {
   	echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
   fi
 
+  if cat /etc/os-release | grep xenial; then
+	curl -fsSL https://bootstrap.pypa.io/pip/3.5/get-pip.py | python3.5
+  fi
+
   if [ -f /etc/centos-release ]; then
 	  local REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g')
 	  if [[ "${REV}" =~ ^9 ]]; then
