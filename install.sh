@@ -434,6 +434,13 @@ while [ "$1" != "" ]; do
 				shift
 			fi
 		;;
+		
+		-jh | --jwtheader )
+			if [ "$2" != "" ]; then
+				JWT_HEADER=$2
+				shift
+			fi
+		;;
 
 		-js | --jwtsecret )
 			if [ "$2" != "" ]; then
@@ -492,6 +499,7 @@ while [ "$1" != "" ]; do
 			echo "      -cp, --communityport              community port (default value 80)"
 			echo "      -mk, --machinekey                 setting for core.machinekey"
 			echo "      -je, --jwtenabled                 specifies the enabling the JWT validation (true|false)"
+			echo "      -jh, --jwtheader                  defines the http header that will be used to send the JWT"
 			echo "      -js, --jwtsecret                  defines the secret key to validate the JWT in the request"
 			echo "      -?, -h, --help                    this help"
 			echo
@@ -1205,7 +1213,7 @@ install_document_server () {
 
 		if [[ -n ${JWT_SECRET} ]]; then
 			args+=(-e "JWT_ENABLED=$JWT_ENABLED");
-			args+=(-e "JWT_HEADER=AuthorizationJwt");
+			args+=(-e "JWT_HEADER=$JWT_HEADER");
 			args+=(-e "JWT_SECRET=$JWT_SECRET");
 		else
 			args+=(-e "JWT_ENABLED=false");
@@ -1604,7 +1612,7 @@ install_community_server () {
 
 		if [[ -n ${JWT_SECRET} ]]; then
 			args+=(-e "DOCUMENT_SERVER_JWT_ENABLED=$JWT_ENABLED");
-			args+=(-e "DOCUMENT_SERVER_JWT_HEADER=AuthorizationJwt");
+			args+=(-e "DOCUMENT_SERVER_JWT_HEADER=$JWT_HEADER");
 			args+=(-e "DOCUMENT_SERVER_JWT_SECRET=$JWT_SECRET");
 		else
 			args+=(-e "DOCUMENT_SERVER_JWT_ENABLED=false");
@@ -1707,6 +1715,31 @@ set_jwt_secret () {
 		[ $JWT_ENABLED = "true" ] && JWT_MESSAGE='JWT is enabled by default. A random secret is generated automatically. Run the command "docker exec $(sudo docker ps -q) sudo documentserver-jwt-status.sh" to get information about JWT.'
 	fi
 }
+
+set_jwt_header () {
+	CURRENT_JWT_HEADER="";
+
+	if [[ -z ${JWT_HEADER} ]]; then
+		CURRENT_JWT_HEADER=$(get_container_env_parameter "$DOCUMENT_CONTAINER_NAME" "JWT_HEADER");
+
+		if [[ -n ${CURRENT_JWT_HEADER} ]]; then
+			JWT_HEADER="$CURRENT_JWT_HEADER";
+		fi
+	fi	
+	
+	if [[ -z ${JWT_HEADER} ]]; then
+		CURRENT_JWT_HEADER=$(get_container_env_parameter "$COMMUNITY_CONTAINER_NAME" "DOCUMENT_SERVER_JWT_HEADER");
+
+		if [[ -n ${CURRENT_JWT_HEADER} ]]; then
+			JWT_HEADER="$CURRENT_JWT_HEADER";
+		fi
+	fi
+
+	if [[ -z ${JWT_HEADER} ]]; then
+		JWT_HEADER="AuthorizationJwt"
+	fi
+}
+
 
 set_jwt_enabled () {
 	CURRENT_JWT_ENABLED="";
@@ -2206,6 +2239,7 @@ start_installation () {
 	set_installation_type_data
 
 	set_jwt_enabled
+	set_jwt_header
 	set_jwt_secret
 
 	set_core_machinekey
