@@ -1207,6 +1207,8 @@ install_document_server () {
 			args+=(-e "JWT_ENABLED=$JWT_ENABLED");
 			args+=(-e "JWT_HEADER=AuthorizationJwt");
 			args+=(-e "JWT_SECRET=$JWT_SECRET");
+		else
+			args+=(-e "JWT_ENABLED=false");
 		fi
 
 		args+=(-v "$BASE_DIR/DocumentServer/data:/var/www/$PRODUCT/Data");
@@ -1604,6 +1606,8 @@ install_community_server () {
 			args+=(-e "DOCUMENT_SERVER_JWT_ENABLED=$JWT_ENABLED");
 			args+=(-e "DOCUMENT_SERVER_JWT_HEADER=AuthorizationJwt");
 			args+=(-e "DOCUMENT_SERVER_JWT_SECRET=$JWT_SECRET");
+		else
+			args+=(-e "DOCUMENT_SERVER_JWT_ENABLED=false");
 		fi
 
 		if [[ -n ${CORE_MACHINEKEY} ]]; then
@@ -1698,7 +1702,7 @@ set_jwt_secret () {
 		fi
 	fi
 
-	if [[ -z ${JWT_SECRET} ]] && [[ "$UPDATE" != "true" ]] && [[ "$USE_AS_EXTERNAL_SERVER" != "true" ]]; then
+	if [[ -z ${JWT_SECRET} ]] && [[ "$USE_AS_EXTERNAL_SERVER" != "true" ]]; then
 		JWT_SECRET=$(get_random_str 12);
 	fi
 }
