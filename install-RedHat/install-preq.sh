@@ -54,6 +54,7 @@ if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 	fi
 	REV_PARTS=(${REV//\./ });
 	REV=${REV_PARTS[0]};
+	DOTNET_HOST="dotnet-host-6.0*"
 fi
 
 #Add repositories: EPEL, REMI and RPMFUSION
@@ -74,11 +75,8 @@ elif [ "$REV" = "7" ] ; then
 fi
 
 #add rabbitmq & erlang repo
-wget https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh -O rabbitmq_script.rpm.sh
-wget https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh -O erlang_script.rpm.sh
-chmod +x rabbitmq_script.rpm.sh erlang_script.rpm.sh
-os=centos dist=$MONOREV ./rabbitmq_script.rpm.sh && os=centos dist=$MONOREV ./erlang_script.rpm.sh
-rm -f rabbitmq_script.rpm.sh erlang_script.rpm.sh
+curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$MONOREV bash
+curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$MONOREV bash
 
 if rpm -q rabbitmq-server; then
 	if [ "$(repoquery --installed rabbitmq-server --qf '%{ui_from_repo}' | sed 's/@//')" != "$(repoquery rabbitmq-server --qf='%{ui_from_repo}')" ]; then
@@ -91,7 +89,7 @@ if rpm -q rabbitmq-server; then
 fi
 
 #add dotnet repo
-if [ $MONOREV = "7" ] || [[ $DIST != "redhat" && $REV = "8" ]]; then
+if [ $REV = "7" ] || [[ $DIST != "redhat" && $REV = "8" ]]; then
 	rpm -Uvh https://packages.microsoft.com/config/centos/$REV/packages-microsoft-prod.rpm || true
 elif rpm -q packages-microsoft-prod; then
 	yum remove -y packages-microsoft-prod dotnet*
@@ -115,8 +113,8 @@ END
 
 #add mysql repo
 [ "$REV" != "7" ] && dnf remove -y @mysql && dnf module -y reset mysql && dnf module -y disable mysql
-MYSQL_REPO_VERSION="$(curl https://dev.mysql.com/downloads/repo/yum/ | grep -oP "mysql80-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | head -n1)"
-yum localinstall -y https://dev.mysql.com/get/mysql80-community-release-el${REV}-${MYSQL_REPO_VERSION}.noarch.rpm || true
+MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP "mysql80-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | sort | tail -n1)"
+yum localinstall -y https://repo.mysql.com/mysql80-community-release-el${REV}-${MYSQL_REPO_VERSION}.noarch.rpm || true
 
 #add mono repo
 su -c "curl https://download.mono-project.com/repo/centos$MONOREV-stable.repo | tee /etc/yum.repos.d/mono-centos$MONOREV-stable.repo"
@@ -165,7 +163,7 @@ yum -y install epel-release \
 			make \
 			SDL2 $POWERTOOLS_REPO \
 			snapd \
-			dotnet-sdk-6.0
+			dotnet-sdk-6.0 $DOTNET_HOST
 			
 yum versionlock mono-complete
 
