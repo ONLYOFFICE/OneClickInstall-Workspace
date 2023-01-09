@@ -1711,7 +1711,7 @@ set_jwt_secret () {
 	fi
 
 	if [[ -z ${JWT_SECRET} ]] && [[ "$USE_AS_EXTERNAL_SERVER" != "true" ]]; then
-		JWT_SECRET=$(get_random_str 12);
+		JWT_SECRET=$(get_random_str 32);
 		[ $JWT_ENABLED = "true" ] && JWT_MESSAGE='JWT is enabled by default. A random secret is generated automatically. Run the command "docker exec $(sudo docker ps -q) sudo documentserver-jwt-status.sh" to get information about JWT.'
 	fi
 }
