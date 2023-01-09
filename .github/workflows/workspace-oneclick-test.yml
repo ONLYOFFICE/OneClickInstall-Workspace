@@ -94,9 +94,6 @@ jobs:
     needs: spin-up
     name: "Run tests on ${{ matrix.boxes }}"
     runs-on: self-hosted
-    defaults:
-      run:
-        working-directory: './tests/vagrant'
     strategy:
       fail-fast: false
       matrix:
@@ -126,31 +123,50 @@ jobs:
 
     - name: Install from production scripts
       if: ${{ github.event_name == 'schedule' }}
-      run: |
-              set -eux
-              
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 2
+        retry_on: error
+        command: |
+              cd tests/vagrant
               TEST_CASE='--production-install' \
               DISTR='generic' \
               OS='${{ matrix.boxes }}' \
               DOWNLOAD_SCRIPT='-ds true' \
               ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
               vagrant up
+        on_retry_command: |
+              echo "RUN CLEAN UP: Destroy vagrant and one more try"
+              cd tests/vagrant
               sleep 10
               vagrant destroy --force
 
     - name: Install from local scripts
-      if:  ${{ github.event_name == 'pull_request' }}
-      run: |
-              set -eux
-
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 2
+        retry_on: error
+        command: |
+              cd tests/vagrant
               TEST_CASE='--local-install' \
               DISTR='generic' \
               OS='${{ matrix.boxes }}' \
               DOWNLOAD_SCRIPT='-ds false' \
               ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true'" \
               vagrant up
+        on_retry_command: |
+              echo "RUN CLEAN UP: Destroy vagrant and one more try"
+              cd tests/vagrant
               sleep 10
               vagrant destroy --force
+
+    - name: Clean up instance
+      working-directory: ./tests/vagrant
+      if: always()
+      run: |
+            sleep 10
+            vagrant destroy --force
 
   tear-down:
     name: Destroy instance ${{ matrix.name }}
