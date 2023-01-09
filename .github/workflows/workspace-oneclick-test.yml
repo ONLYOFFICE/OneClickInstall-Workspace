@@ -161,13 +161,6 @@ jobs:
               sleep 10
               vagrant destroy --force
 
-    - name: Clean up instance
-      working-directory: ./tests/vagrant
-      if: always()
-      run: |
-            sleep 10
-            vagrant destroy --force
-
   tear-down:
     name: Destroy instance ${{ matrix.name }}
     needs: [vagrant-up]
