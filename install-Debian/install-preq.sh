@@ -66,7 +66,7 @@ else
 fi
 
 # add mono extra key
-gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CB2DE8E5
+curl -fsSL https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --import
 chmod 644 /usr/share/keyrings/mono-extra.gpg
 
 if [ "$DIST" = "ubuntu" ]; then	

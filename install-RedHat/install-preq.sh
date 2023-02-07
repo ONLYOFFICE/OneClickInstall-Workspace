@@ -95,18 +95,13 @@ elif rpm -q packages-microsoft-prod; then
 	yum remove -y packages-microsoft-prod dotnet*
 fi
 
-#hyperfastcgi repo key
-curl -o cs.key "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x8320CA65CB2DE8E5"
-echo "" >> cs.key
-rpm --import cs.key || true
-rm cs.key
-
 #add hyperfastcgi repo
 cat > /etc/yum.repos.d/mono-extra.repo <<END
 [mono-extra]
 name=mono-extra repo
 baseurl=https://d2nlctn12v279m.cloudfront.net/repo/mono/centos$MONOREV/main/noarch/
 gpgcheck=1
+gpgkey=https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key
 enabled=1
 END
 [[ $hyperfastcgi_version = "0.4-8" ]] && sed -i "s/centos8/centos9/g" /etc/yum.repos.d/mono-extra.repo
