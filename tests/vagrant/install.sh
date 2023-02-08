@@ -71,12 +71,10 @@ SERVICES_SYSTEMD=(
         "onlyofficeThumb.service"                        
         "onlyofficeThumbnailBuilder.service"               
         "onlyofficeUrlShortener.service"                   
-	"onlyofficeWebDav.service")      
-
-SERVICES_SUPERVISOR=(
-	"ds:converter"
-	"ds:docservice"
-	"ds:metrics")
+        "onlyofficeWebDav.service"
+        "ds-converter.service"
+        "ds-docservice.service"
+        "ds-metrics.service")      
 
 function common::get_colors() {
     COLOR_BLUE=$'\e[34m'
@@ -181,27 +179,6 @@ function healthcheck_systemd_services() {
 }
 
 #############################################################################################
-# Healthcheck function for supervisor services 
-# Globals:
-#   SERVICES_SUPERVISOR
-# Arguments:
-#   None
-# Outputs:
-#   Message about service status 
-#############################################################################################
-function healthcheck_supervisor_services() {
-  for service in ${SERVICES_SUPERVISOR[@]}
-    do
-      if supervisorctl status ${service} > /dev/null 2>&1 ; then
-        echo "${COLOR_GREEN}☑ OK: Service ${service} is running${COLOR_RESET}"
-      else
-        echo "${COLOR_RED}⚠ FAILED: Service ${service} is not running${COLOR_RESET}"
-        SUPERVISOR_SVC_FAILED="true"
-      fi
-    done
-}
-
-#############################################################################################
 # Set output if some services failed
 # Globals:
 #   None
@@ -213,7 +190,7 @@ function healthcheck_supervisor_services() {
 # 0 if all services is start correctly, non-zero if some failed
 #############################################################################################
 function healthcheck_general_status() {
-  if [ ! -z "${SYSTEMD_SVC_FAILED}" ] || [ ! -z "${SUPERVISOR_SVC_FAILED}" ]; then
+  if [ ! -z "${SYSTEMD_SVC_FAILED}" ]; then
     echo "${COLOR_YELLOW}⚠ ⚠  ATTENTION: Some sevices is not running ⚠ ⚠ ${COLOR_RESET}"
     exit 1
   fi
@@ -231,7 +208,6 @@ main() {
   install_workspace
   sleep 120
   healthcheck_systemd_services
-  healthcheck_supervisor_services
   healthcheck_general_status
 }
 
