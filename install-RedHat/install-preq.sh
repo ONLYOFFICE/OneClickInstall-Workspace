@@ -39,12 +39,6 @@ if rpm -qa | grep mariadb.*config >/dev/null 2>&1; then
    echo $RES_MARIADB && exit 0
 fi 
 
-# add mono repo key
-curl -o repo-mono.key "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
-echo "" >> repo-mono.key
-rpm --import repo-mono.key
-rm repo-mono.key
-
 if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 	REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g');
 	MONOREV=7
@@ -95,18 +89,13 @@ elif rpm -q packages-microsoft-prod; then
 	yum remove -y packages-microsoft-prod dotnet*
 fi
 
-#hyperfastcgi repo key
-curl -o cs.key "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x8320CA65CB2DE8E5"
-echo "" >> cs.key
-rpm --import cs.key || true
-rm cs.key
-
 #add hyperfastcgi repo
 cat > /etc/yum.repos.d/mono-extra.repo <<END
 [mono-extra]
 name=mono-extra repo
 baseurl=https://d2nlctn12v279m.cloudfront.net/repo/mono/centos$MONOREV/main/noarch/
 gpgcheck=1
+gpgkey=https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key
 enabled=1
 END
 [[ $hyperfastcgi_version = "0.4-8" ]] && sed -i "s/centos8/centos9/g" /etc/yum.repos.d/mono-extra.repo
@@ -117,6 +106,7 @@ MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP "mysql80-community-
 yum localinstall -y https://repo.mysql.com/mysql80-community-release-el${REV}-${MYSQL_REPO_VERSION}.noarch.rpm || true
 
 #add mono repo
+rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
 su -c "curl https://download.mono-project.com/repo/centos$MONOREV-stable.repo | tee /etc/yum.repos.d/mono-centos$MONOREV-stable.repo"
 
 # add nginx repo

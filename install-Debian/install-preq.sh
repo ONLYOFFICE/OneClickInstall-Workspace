@@ -50,7 +50,7 @@ echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://downl
 if [ "$DISTRIB_CODENAME" = "bullseye" ]; then sed -i 's/stable-bullseye/stable-buster/g' /etc/apt/sources.list.d/mono-official.list; fi; #Fix missing repository for bullseye
 if [ "$DISTRIB_CODENAME" = "jammy" ]; then sed -i 's/stable-jammy/stable-focal/g' /etc/apt/sources.list.d/mono-official.list; fi; #Fix missing repository for jammy
 
-gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 chmod 644 /usr/share/keyrings/mono-official-stable.gpg
 mono_complete_package_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
@@ -66,7 +66,7 @@ else
 fi
 
 # add mono extra key
-gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CB2DE8E5
+curl -fsSL https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --import
 chmod 644 /usr/share/keyrings/mono-extra.gpg
 
 if [ "$DIST" = "ubuntu" ]; then	
