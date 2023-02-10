@@ -48,7 +48,7 @@ if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 	fi
 	REV_PARTS=(${REV//\./ });
 	REV=${REV_PARTS[0]};
-	DOTNET_HOST="dotnet-host-6.0*"
+	DOTNET_HOST="dotnet-host-7.0*"
 fi
 
 #Add repositories: EPEL, REMI and RPMFUSION
@@ -153,7 +153,7 @@ yum -y install epel-release \
 			make \
 			SDL2 $POWERTOOLS_REPO \
 			snapd \
-			dotnet-sdk-6.0 $DOTNET_HOST
+			dotnet-sdk-7.0 $DOTNET_HOST
 			
 yum versionlock mono-complete
 
