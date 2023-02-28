@@ -71,7 +71,10 @@ SERVICES_SYSTEMD=(
         "onlyofficeThumb.service"                        
         "onlyofficeThumbnailBuilder.service"               
         "onlyofficeUrlShortener.service"                   
-	"onlyofficeWebDav.service")      
+	"onlyofficeWebDav.service"
+	"ds-converter.service"
+	"ds-docservice.service"
+	"ds-metrics.service")
 
 SERVICES_SUPERVISOR=(
 	"ds:converter"
@@ -160,6 +163,7 @@ function install_workspace() {
         fi
         
 	bash workspace-install.sh ${ARGUMENTS} <<< "N
+	                                            Y
         "
 }
 
@@ -235,7 +239,6 @@ main() {
   install_workspace
   sleep 120
   healthcheck_systemd_services
-  healthcheck_supervisor_services
   healthcheck_general_status
 }
 
