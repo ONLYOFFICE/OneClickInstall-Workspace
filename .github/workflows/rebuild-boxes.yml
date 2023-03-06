@@ -12,6 +12,8 @@ on:
 
 env: 
   BOX_DISTRIBUTION: generic
+  VAGRANT_TOKEN: ${{ secrets.VAGRANT_TOKEN }}
+  VAGRANT_ACCOUNT: ${{ secrets.VAGRANT_ACCOUNT }}
 
 defaults:
   run:
@@ -44,7 +46,7 @@ jobs:
         python-version: '3.x'
     
     - name: Login Vagrant cloud
-      run: vagrant cloud auth login --token ${{ secrets.VAGRANT_TOKEN }}
+      run: vagrant cloud auth login --token ${VAGRANT_TOKEN}
 
     - name: Rebuild all boxes
       uses: nick-fields/retry@v2
@@ -69,7 +71,7 @@ jobs:
                 sleep 300
                 vagrant package --output repacked_${{ matrix.boxes }}.box
                 vagrant cloud publish \
-                   onlyoffice/${{ matrix.boxes }} \
+                   ${VAGRANT_ACCOUNT}/${{ matrix.boxes }} \
                    $date virtualbox repacked_${{ matrix.boxes }}.box \
                    -d "Box with pre-installed workspace" \
                    --version-description "Workspace <version>" \
