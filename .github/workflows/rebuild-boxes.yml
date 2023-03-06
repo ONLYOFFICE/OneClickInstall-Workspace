@@ -43,8 +43,8 @@ jobs:
       with:
         python-version: '3.x'
     
-    - name: Show Vagrant version
-      run: vagrant --version
+    - name: Login Vagrant cloud
+      run: vagrant cloud auth login --token ${{ secrets.VAGRANT_TOKEN }}
 
     - name: Rebuild all boxes
       uses: nick-fields/retry@v2
@@ -57,14 +57,13 @@ jobs:
                 
                 cd tests/vagrant
                 export date=$(date +%F)
-                vagrant cloud auth login --token ${{ secrets.VAGRANT_TOKEN }}
                 sleep 300
                    TEST_CASE='--production-install' \
                    DISTR='generic' \
                    OS='${{ matrix.boxes }}' \
                    DOWNLOAD_SCRIPT='-ds true' \
-                   RAM='8192' \
-                   CPU='4' \
+                   RAM='9100' \
+                   CPU='3' \
                    ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
                    vagrant up
                 sleep 300
