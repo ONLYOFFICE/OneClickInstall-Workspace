@@ -117,6 +117,11 @@ function check_hw() {
 #############################################################################################
 function prepare_vm() {
   if [ ! -f /etc/centos-release ]; then 
+  	mkdir -p -m 700 $HOME/.gnupg
+  	echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian stable main" | tee /etc/apt/sources.list.d/onlyoffice4testing.list
+  	curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
+  	chmod 644 /usr/share/keyrings/onlyoffice.gpg
+
   	apt-get remove postfix -y 
   	echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
   fi
@@ -126,6 +131,15 @@ function prepare_vm() {
   fi
 
   if [ -f /etc/centos-release ]; then
+	  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
+[onlyoffice4testing]
+name=onlyoffice4testing repo
+baseurl=http://static.teamlab.info.s3.amazonaws.com/repo/4testing/centos/main/noarch/
+gpgcheck=1
+gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
+enabled=1
+END
+          yum -y install centos*-release
 	  local REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g')
 	  if [[ "${REV}" =~ ^9 ]]; then
 		  update-crypto-policies --set LEGACY
