@@ -83,14 +83,11 @@ fi
 
 #add dotnet repo
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
-	curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-	wget -O /etc/apt/sources.list.d/microsoft-prod.list https://packages.microsoft.com/config/debian/9/prod.list
-elif [ "$DISTRIB_CODENAME" != "jammy" ]; then
+	curl https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
+else
 	curl https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
-	dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
-elif dpkg -l | grep -q "packages-microsoft-prod"; then 
-	apt-get purge -y packages-microsoft-prod dotnet*
 fi
+dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
 
 if [ -z $ELASTICSEARCH_REPOSITORY ]; then
 	# add elasticsearch repo

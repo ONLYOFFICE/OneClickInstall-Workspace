@@ -1,0 +1,88 @@
+name: Rebuild Boxes
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**/README.md'
+      - '**/LICENSE'
+      - '.github/**'
+      - 'tests/**'
+  workflow_dispatch:
+
+env: 
+  BOX_DISTRIBUTION: generic
+  VAGRANT_TOKEN: ${{ secrets.VAGRANT_TOKEN }}
+  VAGRANT_ACCOUNT: ${{ secrets.VAGRANT_ACCOUNT }}
+
+defaults:
+  run:
+    working-directory: 'tests/vagrant'
+
+jobs:
+  vagrant-up:
+    name: "Rebuild box with ${{ matrix.boxes }}"
+    runs-on: macos-12
+    strategy:
+      fail-fast: false
+      matrix:
+        boxes: 
+          - centos7
+          - centos8s
+          - centos9s
+          - debian9
+          - debian10
+          - debian11
+          - ubuntu1804
+          - ubuntu2004
+          - ubuntu2204
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    
+    - name: Login Vagrant cloud
+      run: vagrant cloud auth login --token ${VAGRANT_TOKEN}
+
+    - name: Rebuild all boxes
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 3
+        timeout_minutes: 240
+        retry_on: error
+        command: |
+                set -eux
+                
+                cd tests/vagrant
+                export date=$(date +%F)
+                sleep 300
+                   TEST_CASE='--production-install' \
+                   DISTR='generic' \
+                   OS='${{ matrix.boxes }}' \
+                   DOWNLOAD_SCRIPT='-ds true' \
+                   RAM='9100' \
+                   CPU='3' \
+                   ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
+                   vagrant up
+                sleep 300
+                vagrant package --output repacked_${{ matrix.boxes }}.box
+                vagrant cloud publish \
+                   ${VAGRANT_ACCOUNT}/${{ matrix.boxes }} \
+                   $date virtualbox repacked_${{ matrix.boxes }}.box \
+                   -d "Box with pre-installed workspace" \
+                   --version-description "Workspace <version>" \
+                   --release --short-description "Boxes for update testing" \
+                   --force \
+                   --no-private
+        on_retry_command: |
+               set -eux
+
+               echo "RUN CLEAN UP: Remove repacked box and destroy"
+               cd tests/vagrant
+               rm -rf repacked_${{ matrix.boxes }}.box
+               vagrant destroy --force
