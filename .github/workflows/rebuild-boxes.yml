@@ -9,6 +9,7 @@ on:
       - '**/LICENSE'
       - '.github/**'
       - 'tests/**'
+  workflow_dispatch:
 
 env: 
   BOX_DISTRIBUTION: generic
@@ -51,7 +52,7 @@ jobs:
     - name: Rebuild all boxes
       uses: nick-fields/retry@v2
       with:
-        max_attempts: 2
+        max_attempts: 3
         timeout_minutes: 240
         retry_on: error
         command: |
