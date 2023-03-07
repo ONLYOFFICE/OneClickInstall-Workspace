@@ -130,6 +130,8 @@ jobs:
               cd tests/vagrant
               TEST_CASE='--production-install' \
               DISTR='generic' \
+              RAM='6450' \
+              CPU='4' \
               OS='${{ matrix.boxes }}' \
               DOWNLOAD_SCRIPT='-ds true' \
               ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
@@ -151,6 +153,8 @@ jobs:
               cd tests/vagrant
               TEST_CASE='--local-install' \
               DISTR='generic' \
+              RAM='6450' \
+              CPU='4' \
               OS='${{ matrix.boxes }}' \
               DOWNLOAD_SCRIPT='-ds false' \
               ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true'" \
