@@ -51,7 +51,7 @@ export TERM=xterm-256color^M
 SERVICES_SYSTEMD=(
 	"monoserve.service"
 	"monoserveApiSystem.service"
-	"onlyofficeAutoCleanUp.service" 
+	"onlyofficeFilesTrashCleaner.service" 
 	"onlyofficeBackup.service" 
 	"onlyofficeControlPanel.service" 
 	"onlyofficeFeed.service" 
