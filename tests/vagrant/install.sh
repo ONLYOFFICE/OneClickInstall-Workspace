@@ -138,8 +138,10 @@ function prepare_vm() {
 	  fi
   fi
 
+  # Clean up home folder
+  rm -rf /home/vagrant/*
+
   if [ -d /tmp/workspace ]; then
-          rm -rf /home/vagrant/*
           mv /tmp/workspace/* /home/vagrant
   fi
 
@@ -162,9 +164,7 @@ function install_workspace() {
             wget https://download.onlyoffice.com/install/workspace-install.sh
         fi
         
-	bash workspace-install.sh ${ARGUMENTS} <<< "N
-	                                            Y
-        "
+	printf "N\nY\nY" | bash workspace-install.sh ${ARGUMENTS}
 }
 
 #############################################################################################
