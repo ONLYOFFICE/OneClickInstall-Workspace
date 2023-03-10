@@ -16,6 +16,7 @@ env:
   RUNNER_IMAGE: ubuntu-22-04-x64
   RUNNER_REGION: fra1
   RUNNER_SIZE: s-4vcpu-8gb-intel
+  EVENT: ${{ github.event_name }}
 
 jobs:
   spin-up:
@@ -152,23 +153,6 @@ jobs:
               sleep 10
               vagrant destroy --force
 
-    - name: Update from local scripts
-      if:  ${{ github.event_name == 'pull_request' }}
-      run: |
-              set -eux
-
-              TEST_CASE='--local-update' \
-              DISTR='onlyoffice' \
-              RAM='6450' \
-              CPU='4' \
-              OS='${{ matrix.boxes }}' \
-              DOWNLOAD_SCRIPT='-ds false' \
-              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true --update true'" \
-              vagrant up
-              sleep 10
-              vagrant destroy --force
-
-
   tear-down:
     name: Destroy instance ${{ matrix.name }}
     needs: [vagrant-up]
@@ -204,3 +188,62 @@ jobs:
       run: | 
         RUNNER_ID=$(curl -s -X GET https://api.github.com/repos/${{ github.repository }}/actions/runners -H "accept: application/json" -H "authorization: token ${{ secrets.ACCESS_TOKEN }}" | jq -er '.runners[] | select(.name == "${{ matrix.name }}").id')
         curl -s -X DELETE https://api.github.com/repos/${{ github.repository }}/actions/runners/$RUNNER_ID -H "accept: application/json" -H "authorization: token ${{ secrets.ACCESS_TOKEN }}"
+
+  Update-test:
+    name: "Update test on ${{ matrix.boxes }}"
+    runs-on: macos-12
+    strategy:
+      fail-fast: false
+      matrix:
+        boxes: 
+          - centos7
+          - centos8s
+          - centos9s
+          - debian9
+          - debian10
+          - debian11
+          - ubuntu1804
+          - ubuntu2004
+          - ubuntu2204
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Testing with update
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 1
+        timeout_minutes: 80
+        retry_on: error
+        command: |
+              cd ./tests/vagrant
+              set -eux
+              if [[ "${EVENT}" == "schedule" ]]; then
+                  CASE="--production-install"
+                  ARGS='-args "--skiphardwarecheck true --makeswap false --update true"'
+                  DOWNLOAD_SCRIPTS="-ds true"
+              else
+                  CASE="--local-install"
+                  ARGS='-args "--skiphardwarecheck true --makeswap false --localscripts true --update true"'
+                  DOWNLOAD_SCRIPTS="-ds false"
+              fi
+              TEST_CASE="${CASE}" \
+              DISTR='onlyoffice' \
+              RAM='9100' \
+              CPU='3' \
+              OS='${{ matrix.boxes }}' \
+              DOWNLOAD_SCRIPT=${DOWNLOAD_SCRIPTS} \
+              ARGUMENTS="${ARGS}" \
+              vagrant up
+              sleep 10
+              vagrant destroy --force
+        on_retry_command: |
+             set -eux
+             echo "Clean-up and one more try"
+             cd ./tests/vagrant
+             vagrant destroy --force
