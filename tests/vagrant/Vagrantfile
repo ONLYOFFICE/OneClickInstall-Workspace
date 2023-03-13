@@ -15,7 +15,7 @@ Vagrant.configure("2") do |config|
        config.vm.provision "file", source: "../../../OneClickInstall-Workspace/.", destination: "/tmp/workspace/"
     end
 
-    config.vm.provision "shell", path: './install.sh', :args => "#{ENV['DOWNLOAD_SCRIPT']} #{ENV['ARGUMENTS']}"
+    config.vm.provision "shell", path: './install.sh', :args => "#{ENV['DOWNLOAD_SCRIPT']} #{ENV['ARGUMENTS']} #{ENV['REBUILD']}"
 
     # Prevent SharedFoldersEnableSymlinksCreate errors
     config.vm.synced_folder ".", "/vagrant", disabled: true

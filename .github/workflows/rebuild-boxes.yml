@@ -52,15 +52,16 @@ jobs:
     - name: Rebuild all boxes
       uses: nick-fields/retry@v2
       with:
-        max_attempts: 3
-        timeout_minutes: 240
+        max_attempts: 2
+        timeout_minutes: 180
         retry_on: error
         command: |
                 set -eux
                 
-                cd tests/vagrant
+                cd ./tests/vagrant
                 export date=$(date +%F)
                 sleep 300
+                   REBUILD='-rb true' \
                    TEST_CASE='--production-install' \
                    DISTR='generic' \
                    OS='${{ matrix.boxes }}' \
@@ -83,6 +84,6 @@ jobs:
                set -eux
 
                echo "RUN CLEAN UP: Remove repacked box and destroy"
-               cd tests/vagrant
+               cd ./tests/vagrant
                rm -rf repacked_${{ matrix.boxes }}.box
                vagrant destroy --force

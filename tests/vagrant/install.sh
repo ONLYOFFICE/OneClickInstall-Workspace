@@ -12,6 +12,13 @@ while [ "$1" != "" ]; do
                         fi
                 ;;
 
+		-rb | --rebuild-boxes )
+                        if [ "$2" != "" ]; then
+                                REBUILD_BOXES=$2
+                                shift
+                        fi
+                ;;
+
                 -arg | --arguments )
                         if [ "$2" != "" ]; then
                                 ARGUMENTS=$2
@@ -227,9 +234,22 @@ function healthcheck_general_status() {
   fi
 }
 
-
-function healthcheck_docker_installation() {
-	exit 0
+#############################################################################################
+# Change log permissions on the log folder
+# Globals:
+#   None
+# Arguments:
+#   None
+# Outputs:
+#   ☑ OK: < message >
+# Returns
+# 0
+#############################################################################################
+function change_logs_permissions() {
+  if [ "${REBUILD_BOXES}" == 'true' ]; then
+	echo "${COLOR_GREEN}☑ OK: Permissions on the log folder was changed${COLOR_RESET}"
+	chmod -R 767 /var/log/onlyoffice/
+  fi
 }
 
 main() {
@@ -240,6 +260,7 @@ main() {
   sleep 120
   healthcheck_systemd_services
   healthcheck_general_status
+  change_logs_permissions
 }
 
 main
