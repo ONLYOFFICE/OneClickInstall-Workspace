@@ -16,8 +16,8 @@ jobs:
     with: 
       name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }}
     secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
+      access_token: ${{ secrets.ACCESS_TOKEN }}
+      do_access_token: ${{ secrets.DO_ACCESS_TOKEN }}
 
   spin-centos8:           
     name: Make centos8 runner
