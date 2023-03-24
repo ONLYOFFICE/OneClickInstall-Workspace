@@ -12,7 +12,7 @@ env:
 jobs:
   spin-centos7:           
     name: Make centos7 runner
-    uses: ${MAKE_RUNNER_WORKFLOW}
+    uses: ${{env.MAKE_RUNNER_WORKFLOW}}
     with: 
       name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }} 
   spin-centos8:           
