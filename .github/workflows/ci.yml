@@ -1,8 +1,8 @@
 name: OneClickTests
 
 on: 
-  #push: 
-  workflow_dispatch:
+  push: 
+  #workflow_dispatch:
   
 env: 
   MAKE_RUNNER_WORKFLOW: 'NLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow'
