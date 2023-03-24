@@ -14,7 +14,11 @@ jobs:
     name: Make centos7 runner
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with: 
-      name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }} 
+      name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }}
+    secrets:
+      access-token: ${{ secrets.ACCESS_TOKEN }}
+      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
+
   spin-centos8:           
     name: Make centos8 runner
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
@@ -122,7 +126,10 @@ jobs:
     name: destroy-centos-7
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with: 
-      name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }}     
+      name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }}
+    secrets:
+      access-token: ${{ secrets.ACCESS_TOKEN }}
+      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}     
   destroy-centos8:
     needs: tests-centos8
     if: always()
