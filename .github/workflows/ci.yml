@@ -5,14 +5,14 @@ on:
   workflow_dispatch:
   
 env: 
-  MAKE_RUNNER_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow'
+  MAKE_RUNNER_WORKFLOW: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
   TESTS_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow'
   DESTROY_RUNNER_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow'
 
 jobs:
   spin-centos7:           
     name: Make centos7 runner
-    uses: ${{env.MAKE_RUNNER_WORKFLOW}}
+    uses: "${{env.MAKE_RUNNER_WORKFLOW}}"
     with: 
       name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }} 
   spin-centos8:           
