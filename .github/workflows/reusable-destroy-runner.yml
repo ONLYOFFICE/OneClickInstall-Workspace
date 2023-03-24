@@ -8,6 +8,15 @@ on:
         required: true
         type: string
 
+    secrets:
+      access_token: 
+        description: 'A token passed from the caller workflow'
+        required: false
+
+      do_access_token:
+        description: 'An API token to access DigitalOcean with'
+        required: false
+
 jobs:
   spin-up:
     name: Destroy ${{ inputs.name }}
