@@ -174,6 +174,13 @@ function install_workspace() {
         fi
         
 	printf "N\nY\nY" | bash workspace-install.sh ${ARGUMENTS}
+
+	if [[ $? != 0 ]]; then
+	    echo "Exit code non-zero. Exit with 1."
+	    exit 1
+	else
+	    echo "Exit code 0. Continue..."
+	fi
 }
 
 #############################################################################################
