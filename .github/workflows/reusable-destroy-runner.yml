@@ -1,0 +1,30 @@
+name: Destroy Digital Ocean runners
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: "Droplet name thats will be removed"
+        required: true
+        type: string
+
+jobs:
+  spin-up:
+    name: Destroy ${{ inputs.name }}
+    runs-on: ubuntu-latest
+
+    steps:
+    # Install Doctl
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.do_access_token }}
+
+    # Create the VM
+    - name: Delete vm ${{ inputs.name }}
+      run: doctl compute droplet delete ${{ inputs.name }} -f
+
+    - name: Delete the runner
+      run: |
+        RUNNER_ID=$(curl -s -X GET https://api.github.com/repos/${{ github.repository }}/actions/runners -H "accept: application/json" -H "authorization: token ${{ secrets.access_token }}" | jq -er '.runners[] | select(.name == "${{ inputs.name }}").id')
+        curl -s -X DELETE https://api.github.com/repos/${{ github.repository }}/actions/runners/$RUNNER_ID -H "accept: application/json" -H "authorization: token ${{ secrets.access_token }}"

@@ -1,0 +1,94 @@
+name: Make Digital Ocean runners
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: "Droplet name that will be created"
+        required: true
+        type: string
+
+      image: 
+        description: "Droplet image"
+        required: false
+        default: ubuntu-22-04-x64
+        type: string
+
+      region:
+        description: "Droplet region" 
+        required: false
+        default: fra1
+        type: string
+
+      size: 
+        description: "Droplet size cpu/ram"
+        required: false
+        default: s-4vcpu-8gb-intel
+        type: string
+     
+    secrets:
+      access_token: 
+        description: 'A token passed from the caller workflow'
+        required: false
+
+      do_access_token:
+        description: 'An API token to access DigitalOcean with'
+        required: false
+
+jobs:
+  spin-up:
+    name: Make ${{ inputs.name }}
+    runs-on: ubuntu-latest
+    outputs: 
+      instance-name: ${{ steps.get-name.outputs.name }}
+
+    steps:
+    # Install Doctl
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.do_access_token }}
+
+    - name: Get instance name
+      id: get-name
+      run: echo "name=${{ inputs.name }}" >> $GITHUB_OUTPUT
+
+      # Template for cloud-init install vagrant and virtualbox
+    - name: Template out file
+      run: |
+        cat << EOF > ./user-data
+        #!/bin/bash
+
+        #install virtualbox latest version
+        apt -y update
+        apt -y install jq curl virtualbox
+        #install vagrant latest version
+        wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+        apt update -y
+        apt install vagrant -y
+
+        useradd -m gha-runner
+        echo "gha-runner ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/gha-runner
+        export RUNNER_CFG_PAT="${{ secrets.access_token }}"
+        cd /home/gha-runner
+        curl -s https://raw.githubusercontent.com/actions/runner/main/scripts/create-latest-svc.sh | sudo -E -s -u gha-runner bash -s ${{ github.repository }}
+        EOF
+
+    # Create the VM
+    - name: Create vm for ${{ inputs.name }}
+      run: doctl compute droplet create ${{ inputs.name }} --image ${{ inputs.image }} --region ${{ inputs.region }} --size ${{ inputs.size }} --wait --user-data-file ./user-data > /dev/null
+
+    - name: Wait for VM to come online
+      run: |
+        sleep 30
+        for ATTEMPT in {1..10};
+        do
+          echo "#### Attempt $ATTEMPT ####"
+          if curl -s -X GET https://api.github.com/repos/${{ github.repository }}/actions/runners -H "accept: application/json" -H "authorization: token ${{ secrets.access_token }}" | jq -er '.runners[] | select(.name == "${{ inputs.name }}") | has("status")';
+          then
+            exit 0
+          fi
+          sleep 30
+        done
+        exit 1
