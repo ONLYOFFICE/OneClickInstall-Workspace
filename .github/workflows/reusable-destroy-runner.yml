@@ -9,13 +9,13 @@ on:
         type: string
 
     secrets:
-      access_token: 
+      access-token: 
         description: 'A token passed from the caller workflow'
-        required: false
+        required: true
 
-      do_access_token:
+      do-access-token:
         description: 'An API token to access DigitalOcean with'
-        required: false
+        required: true
 
 jobs:
   spin-up:
@@ -27,7 +27,7 @@ jobs:
     - name: Install doctl
       uses: digitalocean/action-doctl@v2
       with:
-        token: ${{ secrets.do_access_token }}
+        token: ${{ secrets.do-access-token }}
 
     # Create the VM
     - name: Delete vm ${{ inputs.name }}
@@ -35,5 +35,5 @@ jobs:
 
     - name: Delete the runner
       run: |
-        RUNNER_ID=$(curl -s -X GET https://api.github.com/repos/${{ github.repository }}/actions/runners -H "accept: application/json" -H "authorization: token ${{ secrets.access_token }}" | jq -er '.runners[] | select(.name == "${{ inputs.name }}").id')
-        curl -s -X DELETE https://api.github.com/repos/${{ github.repository }}/actions/runners/$RUNNER_ID -H "accept: application/json" -H "authorization: token ${{ secrets.access_token }}"
+        RUNNER_ID=$(curl -s -X GET https://api.github.com/repos/${{ github.repository }}/actions/runners -H "accept: application/json" -H "authorization: token ${{ secrets.access-token }}" | jq -er '.runners[] | select(.name == "${{ inputs.name }}").id')
+        curl -s -X DELETE https://api.github.com/repos/${{ github.repository }}/actions/runners/$RUNNER_ID -H "accept: application/json" -H "authorization: token ${{ secrets.access-token }}"

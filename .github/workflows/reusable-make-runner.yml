@@ -27,13 +27,13 @@ on:
         type: string
      
     secrets:
-      access_token: 
+      access-token: 
         description: 'A token passed from the caller workflow'
-        required: false
+        required: true
 
-      do_access_token:
+      do-access-token:
         description: 'An API token to access DigitalOcean with'
-        required: false
+        required: true
 
 jobs:
   spin-up:
@@ -47,7 +47,7 @@ jobs:
     - name: Install doctl
       uses: digitalocean/action-doctl@v2
       with:
-        token: ${{ secrets.do_access_token }}
+        token: ${{ secrets.do-access-token }}
 
     - name: Get instance name
       id: get-name
@@ -70,7 +70,7 @@ jobs:
 
         useradd -m gha-runner
         echo "gha-runner ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/gha-runner
-        export RUNNER_CFG_PAT="${{ secrets.access_token }}"
+        export RUNNER_CFG_PAT="${{ secrets.access-token }}"
         cd /home/gha-runner
         curl -s https://raw.githubusercontent.com/actions/runner/main/scripts/create-latest-svc.sh | sudo -E -s -u gha-runner bash -s ${{ github.repository }}
         EOF
@@ -85,7 +85,7 @@ jobs:
         for ATTEMPT in {1..10};
         do
           echo "#### Attempt $ATTEMPT ####"
-          if curl -s -X GET https://api.github.com/repos/${{ github.repository }}/actions/runners -H "accept: application/json" -H "authorization: token ${{ secrets.access_token }}" | jq -er '.runners[] | select(.name == "${{ inputs.name }}") | has("status")';
+          if curl -s -X GET https://api.github.com/repos/${{ github.repository }}/actions/runners -H "accept: application/json" -H "authorization: token ${{ secrets.access-token }}" | jq -er '.runners[] | select(.name == "${{ inputs.name }}") | has("status")';
           then
             exit 0
           fi
