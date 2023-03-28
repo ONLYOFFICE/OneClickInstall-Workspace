@@ -15,6 +15,7 @@ env:
   MAKE_RUNNER_WORKFLOW: 'NLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow'
   TESTS_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow'
   DESTROY_RUNNER_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow'
+  EVENT: ${{ github.event_name }}
 
 jobs:
   spin-centos7:           
@@ -89,8 +90,67 @@ jobs:
     secrets:
       access-token: ${{ secrets.ACCESS_TOKEN }}
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-      
-   #### RUN SEPARATE TESTS ###    
+
+  Update-test:
+    name: "Update test on ${{ matrix.boxes }}"
+    runs-on: macos-12
+    strategy:
+      fail-fast: false
+      matrix:
+        boxes: 
+          - centos7
+          - centos8s
+          - centos9s
+          - debian9
+          - debian10
+          - debian11
+          - ubuntu1804
+          - ubuntu2004
+          - ubuntu2204
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python 3.
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Testing with update
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 1
+        timeout_minutes: 80
+        retry_on: error
+        command: |
+              cd ./tests/vagrant
+              set -eux
+              if [[ "${EVENT}" == "schedule" ]]; then
+                  CASE="--production-install"
+                  ARGS='-args "--skiphardwarecheck true --makeswap false --update true"'
+                  DOWNLOAD_SCRIPTS="-ds true"
+              else
+                  CASE="--local-install"
+                  ARGS='-args "--skiphardwarecheck true --makeswap false --localscripts true --update true"'
+                  DOWNLOAD_SCRIPTS="-ds false"
+              fi
+              TEST_CASE="${CASE}" \
+              DISTR='onlyoffice' \
+              RAM='9100' \
+              CPU='3' \
+              OS='${{ matrix.boxes }}' \
+              DOWNLOAD_SCRIPT=${DOWNLOAD_SCRIPTS} \
+              ARGUMENTS="${ARGS}" \
+              vagrant up
+              sleep 10
+              vagrant destroy --force
+        on_retry_command: |
+             set -eux
+             echo "Clean-up and one more try"
+             cd ./tests/vagrant
+             vagrant destroy --force
+
+  #### RUN SEPARATE TESTS ####    
   tests-centos7:
     needs: spin-centos7       
     name: Tests on centos7
