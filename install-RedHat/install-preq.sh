@@ -122,6 +122,7 @@ END
 
 # add nodejs repo
 curl -sL https://rpm.nodesource.com/setup_12.x | sed 's/centos|/'$DIST'|/g' |  sudo bash - || true
+rpm --import http://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
 
 if ! rpm -q mysql-community-server; then
 	MYSQL_FIRST_TIME_INSTALL="true";
