@@ -599,6 +599,7 @@ install_jq () {
 
 install_netstat () {
 	if command_exists apt-get; then
+		apt-get -y update
 		apt-get -y -q install net-tools
 	elif command_exists yum; then
 		yum -y install net-tools
@@ -2172,6 +2173,7 @@ ping_host_port () {
 check_domain () {
 	if ! command_exists dig ; then
 		if command_exists apt-get; then
+			apt-get -y update
 			apt-get install -y dnsutils
 		elif command_exists yum; then
 			yum install bind-utils
