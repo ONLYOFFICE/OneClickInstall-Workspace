@@ -234,6 +234,26 @@ function healthcheck_general_status() {
   fi
 }
 
+#############################################################################################
+# Get logs for all services
+# Globals:
+#   SERVICES_SYSTEMD
+# Arguments:
+#   None
+# Outputs:
+#   Logs for systemd services
+# Returns
+#   always 0
+#############################################################################################
+function services_logs() {
+  for service in ${SERVICES_SYSTEMD[@]}; do
+    echo -----------------------------------------
+    echo "${COLOR_GREEN}Logs for $service${COLOR_RESET}"
+    echo -----------------------------------------
+    EXIT_CODE=0
+    journalctl -u $service || EXIT_CODE=$?
+  done
+}
 
 function healthcheck_docker_installation() {
 	exit 0
@@ -245,6 +265,7 @@ main() {
   check_hw
   install_workspace
   sleep 120
+  services_logs
   healthcheck_systemd_services
   healthcheck_general_status
 }
