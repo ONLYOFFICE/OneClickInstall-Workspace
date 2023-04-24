@@ -237,21 +237,74 @@ function healthcheck_general_status() {
 #############################################################################################
 # Get logs for all services
 # Globals:
-#   SERVICES_SYSTEMD
+#   $SERVICES_SYSTEMD
 # Arguments:
 #   None
 # Outputs:
 #   Logs for systemd services
-# Returns
-#   always 0
+# Returns:
+#   none
+# Commentaries:
+# This function succeeds even if the file for cat was not found. For that use ${SKIP_EXIT} variable
 #############################################################################################
 function services_logs() {
   for service in ${SERVICES_SYSTEMD[@]}; do
     echo -----------------------------------------
-    echo "${COLOR_GREEN}Logs for $service${COLOR_RESET}"
+    echo "${COLOR_GREEN}Check logs for systemd service: $service${COLOR_RESET}"
     echo -----------------------------------------
     EXIT_CODE=0
-    journalctl -u $service || EXIT_CODE=$?
+    journalctl -u $service || true
+  done
+  
+  local MAIN_LOGS_DIR="/var/log/onlyoffice"
+  local DOCS_LOGS_DIR="${MAIN_LOGS_DIR}/documentserver"
+  local DOCSERVICE_LOGS_DIR="${DOCS_LOGS_DIR}/docservice"
+  local CONVERTER_LOGS_DIR="${DOCS_LOGS_DIR}/converter"
+  local METRICS_LOGS_DIR="${DOCS_LOGS_DIR}/metrics"
+       
+  ARRAY_MAIN_SERVICES_LOGS=($(ls ${MAIN_LOGS_DIR} | grep log | sed 's/web.sql.log//;s/web.api.log//;s/nginx.*//' ))
+  ARRAY_DOCSERVICE_LOGS=($(ls ${DOCSERVICE_LOGS_DIR}))
+  ARRAY_CONVERTER_LOGS=($(ls ${CONVERTER_LOGS_DIR}))
+  ARRAY_METRICS_LOGS=($(ls ${METRICS_LOGS_DIR}))
+  
+  echo             "-----------------------------------"
+  echo "${COLOR_YELLOW} Check logs for main services ${COLOR_RESET}"
+  echo             "-----------------------------------"
+  for file in ${ARRAY_MAIN_SERVICES_LOGS[@]}; do
+    echo ---------------------------------------
+    echo "${COLOR_GREEN}logs from file: ${file}${COLOR_RESET}"
+    echo ---------------------------------------
+    cat ${MAIN_LOGS_DIR}/${file} || true
+  done
+  
+  echo             "-----------------------------------"
+  echo "${COLOR_YELLOW} Check logs for Docservice ${COLOR_RESET}"
+  echo             "-----------------------------------"
+  for file in ${ARRAY_DOCSERVICE_LOGS[@]}; do
+    echo ---------------------------------------
+    echo "${COLOR_GREEN}logs from file: ${file}${COLOR_RESET}"
+    echo ---------------------------------------
+    cat ${DOCSERVICE_LOGS_DIR}/${file} || true
+  done
+  
+  echo             "-----------------------------------"
+  echo "${COLOR_YELLOW} Check logs for Converter ${COLOR_RESET}"
+  echo             "-----------------------------------"
+  for file in ${ARRAY_CONVERTER_LOGS[@]}; do
+    echo ---------------------------------------
+    echo "${COLOR_GREEN}logs from file ${file}${COLOR_RESET}"
+    echo ---------------------------------------
+    cat ${CONVERTER_LOGS_DIR}/${file} || true
+  done
+  
+  echo             "-----------------------------------"
+  echo "${COLOR_YELLOW} Start logs for Metrics ${COLOR_RESET}"
+  echo             "-----------------------------------"
+  for file in ${ARRAY_METRICS_LOGS[@]}; do
+    echo ---------------------------------------
+    echo "${COLOR_GREEN}logs from file ${file}${COLOR_RESET}"
+    echo ---------------------------------------
+    cat ${METRICS_LOGS_DIR}/${file} || true
   done
 }
 
