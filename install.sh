@@ -93,6 +93,7 @@ MYSQL_HOST="";
 
 HELP_TARGET="install.sh";
 
+JWT_ENABLED="";
 JWT_SECRET="";
 CORE_MACHINEKEY="";
 
@@ -427,7 +428,21 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
-		-jwt | --jwtsecret )
+		-je | --jwtenabled )
+			if [ "$2" != "" ]; then
+				JWT_ENABLED=$2
+				shift
+			fi
+		;;
+		
+		-jh | --jwtheader )
+			if [ "$2" != "" ]; then
+				JWT_HEADER=$2
+				shift
+			fi
+		;;
+
+		-js | --jwtsecret )
 			if [ "$2" != "" ]; then
 				JWT_SECRET=$2
 				shift
@@ -483,7 +498,9 @@ while [ "$1" != "" ]; do
 			echo "      -skipdc, --skipdomaincheck        skip domain check when installing mail server (true|false)"
 			echo "      -cp, --communityport              community port (default value 80)"
 			echo "      -mk, --machinekey                 setting for core.machinekey"
-			echo "      -jwt, --jwtsecret                 setting for jwt secret"
+			echo "      -je, --jwtenabled                 specifies the enabling the JWT validation (true|false)"
+			echo "      -jh, --jwtheader                  defines the http header that will be used to send the JWT"
+			echo "      -js, --jwtsecret                  defines the secret key to validate the JWT in the request"
 			echo "      -?, -h, --help                    this help"
 			echo
 			echo "  Examples"
@@ -582,6 +599,7 @@ install_jq () {
 
 install_netstat () {
 	if command_exists apt-get; then
+		apt-get -y update
 		apt-get -y -q install net-tools
 	elif command_exists yum; then
 		yum -y install net-tools
@@ -1195,9 +1213,11 @@ install_document_server () {
 		fi
 
 		if [[ -n ${JWT_SECRET} ]]; then
-			args+=(-e "JWT_ENABLED=true");
-			args+=(-e "JWT_HEADER=AuthorizationJwt");
+			args+=(-e "JWT_ENABLED=$JWT_ENABLED");
+			args+=(-e "JWT_HEADER=$JWT_HEADER");
 			args+=(-e "JWT_SECRET=$JWT_SECRET");
+		else
+			args+=(-e "JWT_ENABLED=false");
 		fi
 
 		args+=(-v "$BASE_DIR/DocumentServer/data:/var/www/$PRODUCT/Data");
@@ -1592,9 +1612,11 @@ install_community_server () {
 		fi
 
 		if [[ -n ${JWT_SECRET} ]]; then
-			args+=(-e "DOCUMENT_SERVER_JWT_ENABLED=true");
-			args+=(-e "DOCUMENT_SERVER_JWT_HEADER=AuthorizationJwt");
+			args+=(-e "DOCUMENT_SERVER_JWT_ENABLED=$JWT_ENABLED");
+			args+=(-e "DOCUMENT_SERVER_JWT_HEADER=$JWT_HEADER");
 			args+=(-e "DOCUMENT_SERVER_JWT_SECRET=$JWT_SECRET");
+		else
+			args+=(-e "DOCUMENT_SERVER_JWT_ENABLED=false");
 		fi
 
 		if [[ -n ${CORE_MACHINEKEY} ]]; then
@@ -1689,8 +1711,58 @@ set_jwt_secret () {
 		fi
 	fi
 
-	if [[ -z ${JWT_SECRET} ]] && [[ "$UPDATE" != "true" ]] && [[ "$USE_AS_EXTERNAL_SERVER" != "true" ]]; then
-		JWT_SECRET=$(get_random_str 12);
+	if [[ -z ${JWT_SECRET} ]] && [[ "$USE_AS_EXTERNAL_SERVER" != "true" ]]; then
+		JWT_SECRET=$(get_random_str 32);
+		[ $JWT_ENABLED = "true" ] && JWT_MESSAGE='JWT is enabled by default. A random secret is generated automatically. Run the command "docker exec $(sudo docker ps -q) sudo documentserver-jwt-status.sh" to get information about JWT.'
+	fi
+}
+
+set_jwt_header () {
+	CURRENT_JWT_HEADER="";
+
+	if [[ -z ${JWT_HEADER} ]]; then
+		CURRENT_JWT_HEADER=$(get_container_env_parameter "$DOCUMENT_CONTAINER_NAME" "JWT_HEADER");
+
+		if [[ -n ${CURRENT_JWT_HEADER} ]]; then
+			JWT_HEADER="$CURRENT_JWT_HEADER";
+		fi
+	fi	
+	
+	if [[ -z ${JWT_HEADER} ]]; then
+		CURRENT_JWT_HEADER=$(get_container_env_parameter "$COMMUNITY_CONTAINER_NAME" "DOCUMENT_SERVER_JWT_HEADER");
+
+		if [[ -n ${CURRENT_JWT_HEADER} ]]; then
+			JWT_HEADER="$CURRENT_JWT_HEADER";
+		fi
+	fi
+
+	if [[ -z ${JWT_HEADER} ]]; then
+		JWT_HEADER="AuthorizationJwt"
+	fi
+}
+
+
+set_jwt_enabled () {
+	CURRENT_JWT_ENABLED="";
+
+	if [[ -z ${JWT_ENABLED} ]]; then
+		CURRENT_JWT_ENABLED=$(get_container_env_parameter "$DOCUMENT_CONTAINER_NAME" "JWT_ENABLED");
+
+		if [[ -n ${CURRENT_JWT_ENABLED} ]]; then
+			JWT_ENABLED="$CURRENT_JWT_ENABLED";
+		fi
+	fi
+
+	if [[ -z ${JWT_ENABLED} ]]; then
+		CURRENT_JWT_ENABLED=$(get_container_env_parameter "$COMMUNITY_CONTAINER_NAME" "DOCUMENT_SERVER_JWT_ENABLED");
+
+		if [[ -n ${CURRENT_JWT_ENABLED} ]]; then
+			JWT_ENABLED="$CURRENT_JWT_ENABLED";
+		fi
+	fi
+
+	if [[ -z ${JWT_ENABLED} ]]; then
+		JWT_ENABLED="true"
 	fi
 }
 
@@ -2101,6 +2173,7 @@ ping_host_port () {
 check_domain () {
 	if ! command_exists dig ; then
 		if command_exists apt-get; then
+			apt-get -y update
 			apt-get install -y dnsutils
 		elif command_exists yum; then
 			yum install bind-utils
@@ -2167,6 +2240,8 @@ start_installation () {
 
 	set_installation_type_data
 
+	set_jwt_enabled
+	set_jwt_header
 	set_jwt_secret
 
 	set_core_machinekey
@@ -2291,6 +2366,7 @@ start_installation () {
 		pull_community_server
 	fi
 
+	[ -n "$JWT_MESSAGE" ] && [ -n "$DOCUMENT_SERVER_ID" ] && JWT_MESSAGE=$(echo "$JWT_MESSAGE" | sed 's/$(sudo docker ps -q)/'"${DOCUMENT_SERVER_ID::12}"'/') && echo -e "\n$JWT_MESSAGE"
 	echo ""
 	echo "Thank you for installing ONLYOFFICE."
 	echo "You can now configure your portal and add Mail Server to your installation (in case you skipped it earlier) using the Control Panel"

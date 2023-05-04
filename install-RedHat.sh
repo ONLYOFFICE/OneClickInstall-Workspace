@@ -89,16 +89,12 @@ if [ -z "${SKIP_HARDWARE_CHECK}" ]; then
    SKIP_HARDWARE_CHECK="false";
 fi
 
-curl -o cs.key "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x8320CA65CB2DE8E5"
-echo "" >> cs.key
-rpm --import cs.key
-rm cs.key
-
 cat > /etc/yum.repos.d/onlyoffice.repo <<END
 [onlyoffice]
 name=onlyoffice repo
 baseurl=http://download.onlyoffice.com/repo/centos/main/noarch/
 gpgcheck=1
+gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
 enabled=1
 END
 

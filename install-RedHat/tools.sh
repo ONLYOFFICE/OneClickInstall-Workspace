@@ -106,8 +106,8 @@ read_rabbitmq_update () {
 	read -p "$RES_CHOICE_RABBITMQ " CHOICE_INSTALLATION
 	case "$CHOICE_INSTALLATION" in
 		y|Y )
+			rm -rf /var/lib/rabbitmq/mnesia/$(rabbitmqctl eval "node().")
 			yum -y remove rabbitmq-server erlang* 
-			rm -rf /var/lib/rabbitmq/mnesia/*@localhost
 		;;
 
 		n|N )

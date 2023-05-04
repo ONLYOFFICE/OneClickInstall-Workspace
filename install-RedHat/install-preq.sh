@@ -39,12 +39,6 @@ if rpm -qa | grep mariadb.*config >/dev/null 2>&1; then
    echo $RES_MARIADB && exit 0
 fi 
 
-# add mono repo key
-curl -o repo-mono.key "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
-echo "" >> repo-mono.key
-rpm --import repo-mono.key
-rm repo-mono.key
-
 if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 	REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g');
 	MONOREV=7
@@ -54,6 +48,7 @@ if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 	fi
 	REV_PARTS=(${REV//\./ });
 	REV=${REV_PARTS[0]};
+	DOTNET_HOST="dotnet-host-7.0*"
 fi
 
 #Add repositories: EPEL, REMI and RPMFUSION
@@ -64,7 +59,7 @@ yum localinstall -y --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusi
 if [ "$REV" = "9" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"};
 	MONOREV="8"
-	TESTING_REPO="--enablerepo=crb --enablerepo=epel-testing"
+	TESTING_REPO="--enablerepo=crb"
 	yum localinstall -y --nogpgcheck https://vault.centos.org/centos/8/AppStream/x86_64/os/Packages/xorg-x11-font-utils-7.5-41.el8.x86_64.rpm
 elif [ "$REV" = "8" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"};
@@ -74,11 +69,8 @@ elif [ "$REV" = "7" ] ; then
 fi
 
 #add rabbitmq & erlang repo
-wget https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh -O rabbitmq_script.rpm.sh
-wget https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh -O erlang_script.rpm.sh
-chmod +x rabbitmq_script.rpm.sh erlang_script.rpm.sh
-os=centos dist=$MONOREV ./rabbitmq_script.rpm.sh && os=centos dist=$MONOREV ./erlang_script.rpm.sh
-rm -f rabbitmq_script.rpm.sh erlang_script.rpm.sh
+curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$MONOREV bash
+curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$MONOREV bash
 
 if rpm -q rabbitmq-server; then
 	if [ "$(repoquery --installed rabbitmq-server --qf '%{ui_from_repo}' | sed 's/@//')" != "$(repoquery rabbitmq-server --qf='%{ui_from_repo}')" ]; then
@@ -91,17 +83,11 @@ if rpm -q rabbitmq-server; then
 fi
 
 #add dotnet repo
-if [ $MONOREV = "7" ] || [[ $DIST != "redhat" && $REV = "8" ]]; then
+if [ $REV = "7" ] || [[ $DIST != "redhat" && $REV = "8" ]]; then
 	rpm -Uvh https://packages.microsoft.com/config/centos/$REV/packages-microsoft-prod.rpm || true
 elif rpm -q packages-microsoft-prod; then
 	yum remove -y packages-microsoft-prod dotnet*
 fi
-
-#hyperfastcgi repo key
-curl -o cs.key "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x8320CA65CB2DE8E5"
-echo "" >> cs.key
-rpm --import cs.key || true
-rm cs.key
 
 #add hyperfastcgi repo
 cat > /etc/yum.repos.d/mono-extra.repo <<END
@@ -109,16 +95,18 @@ cat > /etc/yum.repos.d/mono-extra.repo <<END
 name=mono-extra repo
 baseurl=https://d2nlctn12v279m.cloudfront.net/repo/mono/centos$MONOREV/main/noarch/
 gpgcheck=1
+gpgkey=https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key
 enabled=1
 END
 [[ $hyperfastcgi_version = "0.4-8" ]] && sed -i "s/centos8/centos9/g" /etc/yum.repos.d/mono-extra.repo
 
 #add mysql repo
 [ "$REV" != "7" ] && dnf remove -y @mysql && dnf module -y reset mysql && dnf module -y disable mysql
-MYSQL_REPO_VERSION="$(curl https://dev.mysql.com/downloads/repo/yum/ | grep -oP "mysql80-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | head -n1)"
-yum localinstall -y https://dev.mysql.com/get/mysql80-community-release-el${REV}-${MYSQL_REPO_VERSION}.noarch.rpm || true
+MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP "mysql80-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | sort | tail -n1)"
+yum localinstall -y https://repo.mysql.com/mysql80-community-release-el${REV}-${MYSQL_REPO_VERSION}.noarch.rpm || true
 
 #add mono repo
+rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
 su -c "curl https://download.mono-project.com/repo/centos$MONOREV-stable.repo | tee /etc/yum.repos.d/mono-centos$MONOREV-stable.repo"
 
 # add nginx repo
@@ -134,6 +122,7 @@ END
 
 # add nodejs repo
 curl -sL https://rpm.nodesource.com/setup_12.x | sed 's/centos|/'$DIST'|/g' |  sudo bash - || true
+rpm --import http://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
 
 if ! rpm -q mysql-community-server; then
 	MYSQL_FIRST_TIME_INSTALL="true";
@@ -165,7 +154,7 @@ yum -y install epel-release \
 			make \
 			SDL2 $POWERTOOLS_REPO \
 			snapd \
-			dotnet-sdk-6.0
+			dotnet-sdk-7.0 $DOTNET_HOST
 			
 yum versionlock mono-complete
 

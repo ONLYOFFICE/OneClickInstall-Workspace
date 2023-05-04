@@ -1,0 +1,87 @@
+name: Scripts test
+
+on:
+  workflow_call:
+    inputs:
+      author:
+        description: 'Vagrant boxes distributor'
+        required: false
+        type: string
+        default: 'generic'
+      distr:
+        description: 'Distributive thats will be used for tests'
+        required: true
+        type: string
+      ram:
+        description: 'RAM memory thats will be set for vagrant box'
+        required: false
+        type: string
+        default: '6450'
+      cpu:
+        description: 'CPU count thats will be set for vagrant box'
+        required: false
+        type: string
+        default: '4'
+      
+jobs:
+  vagrant-up:
+    name: "Run tests on ${{ inputs.distr }}"
+    runs-on: self-hosted
+    steps:
+    - name: Checkout code      
+      uses: actions/checkout@v3
+ 
+    - name: Set up Python 3.
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Show Vagrant version
+      run: vagrant --version
+
+    - name: Install from production scripts
+      if: ${{ github.event_name == 'schedule' }}
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 2
+        timeout_minutes: 180
+        retry_on: error
+        command: |
+              cd tests/vagrant
+              TEST_CASE='--production-install' \
+              DISTR='${{ inputs.author }}' \
+              RAM='${{ inputs.ram }}' \
+              CPU='${{ inputs.cpu }}' \
+              OS='${{ inputs.distr }}' \
+              DOWNLOAD_SCRIPT='-ds true' \
+              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
+              vagrant up
+        on_retry_command: |
+              echo "RUN CLEAN UP: Destroy vagrant and one more try"
+              cd tests/vagrant
+              sleep 10
+              vagrant destroy --force
+
+    - name: Install from local scripts
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 2
+        timeout_minutes: 180
+        retry_on: error
+        command: |
+              cd tests/vagrant
+              TEST_CASE='--local-install' \
+              DISTR='${{ inputs.author }}' \
+              RAM='${{ inputs.ram }}' \
+              CPU='${{ inputs.cpu }}' \
+              OS='${{ inputs.distr }}' \
+              DOWNLOAD_SCRIPT='-ds false' \
+              TEST_REPO='-tr true' \
+              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true'" \
+              vagrant up
+        on_retry_command: |
+              echo "RUN CLEAN UP: Destroy vagrant and one more try"
+              cd tests/vagrant
+              sleep 10
+              vagrant destroy --force

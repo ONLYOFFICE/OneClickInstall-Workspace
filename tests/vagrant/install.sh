@@ -41,6 +41,13 @@ while [ "$1" != "" ]; do
                         fi
                 ;;
 
+	        -tr | --test-repo )
+			if [ "$2" != "" ]; then
+				TEST_REPO_ENABLE=$2
+				shift
+		        fi
+		;;
+
 
         esac
 	shift
@@ -51,7 +58,7 @@ export TERM=xterm-256color^M
 SERVICES_SYSTEMD=(
 	"monoserve.service"
 	"monoserveApiSystem.service"
-	"onlyofficeAutoCleanUp.service" 
+	"onlyofficeFilesTrashCleaner.service" 
 	"onlyofficeBackup.service" 
 	"onlyofficeControlPanel.service" 
 	"onlyofficeFeed.service" 
@@ -71,15 +78,10 @@ SERVICES_SYSTEMD=(
         "onlyofficeThumb.service"                        
         "onlyofficeThumbnailBuilder.service"               
         "onlyofficeUrlShortener.service"                   
-	"onlyofficeWebDav.service"
-	"ds-converter.service"
-	"ds-docservice.service"
-	"ds-metrics.service")
-
-SERVICES_SUPERVISOR=(
-	"ds:converter"
-	"ds:docservice"
-	"ds:metrics")
+        "onlyofficeWebDav.service"
+        "ds-converter.service"
+        "ds-docservice.service"
+        "ds-metrics.service")      
 
 function common::get_colors() {
     COLOR_BLUE=$'\e[34m'
@@ -122,6 +124,13 @@ function check_hw() {
 #############################################################################################
 function prepare_vm() {
   if [ ! -f /etc/centos-release ]; then 
+	if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
+   	   mkdir -p -m 700 $HOME/.gnupg
+  	   echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian stable main" | tee /etc/apt/sources.list.d/onlyoffice4testing.list
+  	   curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
+  	   chmod 644 /usr/share/keyrings/onlyoffice.gpg
+	fi
+
   	apt-get remove postfix -y 
   	echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
   fi
@@ -131,6 +140,18 @@ function prepare_vm() {
   fi
 
   if [ -f /etc/centos-release ]; then
+	  if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
+	  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
+[onlyoffice4testing]
+name=onlyoffice4testing repo
+baseurl=http://static.teamlab.info.s3.amazonaws.com/repo/4testing/centos/main/noarch/
+gpgcheck=1
+gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
+enabled=1
+END
+          yum -y install centos*-release
+	  fi
+
 	  local REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g')
 	  if [[ "${REV}" =~ ^9 ]]; then
 		  update-crypto-policies --set LEGACY
@@ -138,8 +159,10 @@ function prepare_vm() {
 	  fi
   fi
 
+  # Clean up home folder
+  rm -rf /home/vagrant/*
+
   if [ -d /tmp/workspace ]; then
-          rm -rf /home/vagrant/*
           mv /tmp/workspace/* /home/vagrant
   fi
 
@@ -162,9 +185,14 @@ function install_workspace() {
             wget https://download.onlyoffice.com/install/workspace-install.sh
         fi
         
-	bash workspace-install.sh ${ARGUMENTS} <<< "N
-	                                            Y
-        "
+	printf "N\nY\nY" | bash workspace-install.sh ${ARGUMENTS}
+
+	if [[ $? != 0 ]]; then
+	    echo "Exit code non-zero. Exit with 1."
+	    exit 1
+	else
+	    echo "Exit code 0. Continue..."
+	fi
 }
 
 #############################################################################################
@@ -189,27 +217,6 @@ function healthcheck_systemd_services() {
 }
 
 #############################################################################################
-# Healthcheck function for supervisor services 
-# Globals:
-#   SERVICES_SUPERVISOR
-# Arguments:
-#   None
-# Outputs:
-#   Message about service status 
-#############################################################################################
-function healthcheck_supervisor_services() {
-  for service in ${SERVICES_SUPERVISOR[@]}
-    do
-      if supervisorctl status ${service} > /dev/null 2>&1 ; then
-        echo "${COLOR_GREEN}☑ OK: Service ${service} is running${COLOR_RESET}"
-      else
-        echo "${COLOR_RED}⚠ FAILED: Service ${service} is not running${COLOR_RESET}"
-        SUPERVISOR_SVC_FAILED="true"
-      fi
-    done
-}
-
-#############################################################################################
 # Set output if some services failed
 # Globals:
 #   None
@@ -221,12 +228,85 @@ function healthcheck_supervisor_services() {
 # 0 if all services is start correctly, non-zero if some failed
 #############################################################################################
 function healthcheck_general_status() {
-  if [ ! -z "${SYSTEMD_SVC_FAILED}" ] || [ ! -z "${SUPERVISOR_SVC_FAILED}" ]; then
+  if [ ! -z "${SYSTEMD_SVC_FAILED}" ]; then
     echo "${COLOR_YELLOW}⚠ ⚠  ATTENTION: Some sevices is not running ⚠ ⚠ ${COLOR_RESET}"
     exit 1
   fi
 }
 
+#############################################################################################
+# Get logs for all services
+# Globals:
+#   $SERVICES_SYSTEMD
+# Arguments:
+#   None
+# Outputs:
+#   Logs for systemd services
+# Returns:
+#   none
+# Commentaries:
+# This function succeeds even if the file for cat was not found. For that use ${SKIP_EXIT} variable
+#############################################################################################
+function services_logs() {
+  for service in ${SERVICES_SYSTEMD[@]}; do
+    echo -----------------------------------------
+    echo "${COLOR_GREEN}Check logs for systemd service: $service${COLOR_RESET}"
+    echo -----------------------------------------
+    EXIT_CODE=0
+    journalctl -u $service || true
+  done
+  
+  local MAIN_LOGS_DIR="/var/log/onlyoffice"
+  local DOCS_LOGS_DIR="${MAIN_LOGS_DIR}/documentserver"
+  local DOCSERVICE_LOGS_DIR="${DOCS_LOGS_DIR}/docservice"
+  local CONVERTER_LOGS_DIR="${DOCS_LOGS_DIR}/converter"
+  local METRICS_LOGS_DIR="${DOCS_LOGS_DIR}/metrics"
+       
+  ARRAY_MAIN_SERVICES_LOGS=($(ls ${MAIN_LOGS_DIR} | grep log | sed 's/web.sql.log//;s/web.api.log//;s/nginx.*//' ))
+  ARRAY_DOCSERVICE_LOGS=($(ls ${DOCSERVICE_LOGS_DIR}))
+  ARRAY_CONVERTER_LOGS=($(ls ${CONVERTER_LOGS_DIR}))
+  ARRAY_METRICS_LOGS=($(ls ${METRICS_LOGS_DIR}))
+  
+  echo             "-----------------------------------"
+  echo "${COLOR_YELLOW} Check logs for main services ${COLOR_RESET}"
+  echo             "-----------------------------------"
+  for file in ${ARRAY_MAIN_SERVICES_LOGS[@]}; do
+    echo ---------------------------------------
+    echo "${COLOR_GREEN}logs from file: ${file}${COLOR_RESET}"
+    echo ---------------------------------------
+    cat ${MAIN_LOGS_DIR}/${file} || true
+  done
+  
+  echo             "-----------------------------------"
+  echo "${COLOR_YELLOW} Check logs for Docservice ${COLOR_RESET}"
+  echo             "-----------------------------------"
+  for file in ${ARRAY_DOCSERVICE_LOGS[@]}; do
+    echo ---------------------------------------
+    echo "${COLOR_GREEN}logs from file: ${file}${COLOR_RESET}"
+    echo ---------------------------------------
+    cat ${DOCSERVICE_LOGS_DIR}/${file} || true
+  done
+  
+  echo             "-----------------------------------"
+  echo "${COLOR_YELLOW} Check logs for Converter ${COLOR_RESET}"
+  echo             "-----------------------------------"
+  for file in ${ARRAY_CONVERTER_LOGS[@]}; do
+    echo ---------------------------------------
+    echo "${COLOR_GREEN}logs from file ${file}${COLOR_RESET}"
+    echo ---------------------------------------
+    cat ${CONVERTER_LOGS_DIR}/${file} || true
+  done
+  
+  echo             "-----------------------------------"
+  echo "${COLOR_YELLOW} Start logs for Metrics ${COLOR_RESET}"
+  echo             "-----------------------------------"
+  for file in ${ARRAY_METRICS_LOGS[@]}; do
+    echo ---------------------------------------
+    echo "${COLOR_GREEN}logs from file ${file}${COLOR_RESET}"
+    echo ---------------------------------------
+    cat ${METRICS_LOGS_DIR}/${file} || true
+  done
+}
 
 function healthcheck_docker_installation() {
 	exit 0
@@ -238,6 +318,7 @@ main() {
   check_hw
   install_workspace
   sleep 120
+  services_logs
   healthcheck_systemd_services
   healthcheck_general_status
 }

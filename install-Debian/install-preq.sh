@@ -50,7 +50,7 @@ echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://downl
 if [ "$DISTRIB_CODENAME" = "bullseye" ]; then sed -i 's/stable-bullseye/stable-buster/g' /etc/apt/sources.list.d/mono-official.list; fi; #Fix missing repository for bullseye
 if [ "$DISTRIB_CODENAME" = "jammy" ]; then sed -i 's/stable-jammy/stable-focal/g' /etc/apt/sources.list.d/mono-official.list; fi; #Fix missing repository for jammy
 
-gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 chmod 644 /usr/share/keyrings/mono-official-stable.gpg
 mono_complete_package_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
@@ -66,7 +66,7 @@ else
 fi
 
 # add mono extra key
-gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CB2DE8E5
+curl -fsSL https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --import
 chmod 644 /usr/share/keyrings/mono-extra.gpg
 
 if [ "$DIST" = "ubuntu" ]; then	
@@ -83,14 +83,11 @@ fi
 
 #add dotnet repo
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
-	curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-	wget -O /etc/apt/sources.list.d/microsoft-prod.list https://packages.microsoft.com/config/debian/9/prod.list
-elif [ "$DISTRIB_CODENAME" != "jammy" ]; then
+	curl https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
+else
 	curl https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
-	dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
-elif dpkg -l | grep -q "packages-microsoft-prod"; then 
-	apt-get purge -y packages-microsoft-prod dotnet*
 fi
+dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
 
 if [ -z $ELASTICSEARCH_REPOSITORY ]; then
 	# add elasticsearch repo
@@ -118,7 +115,7 @@ echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/$D
 # setup msttcorefonts
 echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
 
-MYSQL_REPO_VERSION="$(curl https://dev.mysql.com/downloads/repo/apt/ | grep -oP 'mysql-apt-config_\K.*' | grep -o '^[^_]*' | head -n1)"
+MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP 'mysql-apt-config_\K.*' | grep -o '^[^_]*' | sort --version-sort --field-separator=. | tail -n1)"
 MYSQL_PACKAGE_NAME="mysql-apt-config_${MYSQL_REPO_VERSION}_all.deb"
 if ! dpkg -l | grep -q "mysql-server"; then
 
@@ -128,7 +125,7 @@ MYSQL_SERVER_USER=${MYSQL_SERVER_USER:-"root"}
 MYSQL_SERVER_PASS=${MYSQL_SERVER_PASS:-"$(cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 12)"}
 
 # setup mysql 8.0 package
-curl -OL http://dev.mysql.com/get/${MYSQL_PACKAGE_NAME}
+curl -OL http://repo.mysql.com/${MYSQL_PACKAGE_NAME}
 echo "mysql-apt-config mysql-apt-config/repo-codename  select  $DISTRIB_CODENAME" | debconf-set-selections
 echo "mysql-apt-config mysql-apt-config/repo-distro  select  $DIST" | debconf-set-selections
 echo "mysql-apt-config mysql-apt-config/select-server  select  mysql-8.0" | debconf-set-selections
@@ -143,7 +140,7 @@ echo mysql-server-8.0 mysql-server/root_password_again password ${MYSQL_SERVER_P
 
 apt-get -y update
 elif dpkg -l | grep -q "mysql-apt-config" && [ "$(apt-cache policy mysql-apt-config | awk 'NR==2{print $2}')" != "${MYSQL_REPO_VERSION}" ]; then
-	curl -OL http://dev.mysql.com/get/${MYSQL_PACKAGE_NAME}
+	curl -OL http://repo.mysql.com/${MYSQL_PACKAGE_NAME}
 	DEBIAN_FRONTEND=noninteractive dpkg -i ${MYSQL_PACKAGE_NAME}
 	rm -f ${MYSQL_PACKAGE_NAME}
 	apt-get -y update
@@ -196,7 +193,7 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				python3-pip \
 				nginx-extras \
 				expect \
-				dotnet-sdk-6.0
+				dotnet-sdk-7.0
 
 if apt-cache search --names-only '^ffmpeg$' | grep -q "ffmpeg"; then
 	apt-get install -yq ffmpeg
