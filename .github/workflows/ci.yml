@@ -15,7 +15,6 @@ env:
   MAKE_RUNNER_WORKFLOW: 'NLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow'
   TESTS_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow'
   DESTROY_RUNNER_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow'
-  EVENT: ${{ github.event_name }}
 
 jobs:
   spin-centos7:           
@@ -94,7 +93,6 @@ jobs:
   Update-test:
     name: "Update test on ${{ matrix.boxes }}"
     runs-on: macos-12
-    if: ${{ false }}
     strategy:
       fail-fast: false
       matrix:
@@ -126,22 +124,15 @@ jobs:
         command: |
               cd ./tests/vagrant
               set -eux
-              if [[ "${EVENT}" == "schedule" ]]; then
-                  CASE="--production-install"
-                  ARGS='-args "--skiphardwarecheck true --makeswap false --update true"'
-                  DOWNLOAD_SCRIPTS="-ds true"
-              else
-                  CASE="--local-install"
-                  ARGS='-args "--skiphardwarecheck true --makeswap false --localscripts true --update true"'
-                  DOWNLOAD_SCRIPTS="-ds false"
-              fi
-              TEST_CASE="${CASE}" \
+
+              TEST_CASE='--local-install' \
               DISTR='onlyoffice' \
               RAM='9100' \
               CPU='3' \
               OS='${{ matrix.boxes }}' \
-              DOWNLOAD_SCRIPT=${DOWNLOAD_SCRIPTS} \
-              ARGUMENTS="${ARGS}" \
+              DOWNLOAD_SCRIPT='-ds false' \
+              TEST_REPO='-tr true' \
+              ARGUMENTS="-args '--skiphardwarecheck true --makeswap false --localscripts true --update true'" \
               vagrant up
               sleep 10
               vagrant destroy --force
