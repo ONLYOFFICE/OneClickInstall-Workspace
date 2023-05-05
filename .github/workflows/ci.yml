@@ -132,7 +132,7 @@ jobs:
               OS='${{ matrix.boxes }}' \
               DOWNLOAD_SCRIPT='-ds false' \
               TEST_REPO='-tr true' \
-              ARGUMENTS="-args '--skiphardwarecheck true --makeswap false --localscripts true --update true'" \
+              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true --update true'" \
               vagrant up
               sleep 10
               vagrant destroy --force
