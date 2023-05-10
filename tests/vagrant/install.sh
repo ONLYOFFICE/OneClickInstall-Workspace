@@ -123,6 +123,26 @@ function check_hw() {
 #   ☑ PREPAVE_VM: **<prepare_message>**
 #############################################################################################
 function prepare_vm() {
+
+  if [ -f /etc/lsb-release ] ; then
+        DIST=`cat /etc/lsb-release | grep '^DISTRIB_ID' | awk -F=  '{ print $2 }'`
+        REV=`cat /etc/lsb-release | grep '^DISTRIB_RELEASE' | awk -F=  '{ print $2 }'`
+        DISTRIB_CODENAME=`cat /etc/lsb-release | grep '^DISTRIB_CODENAME' | awk -F=  '{ print $2 }'`
+        DISTRIB_RELEASE=`cat /etc/lsb-release | grep '^DISTRIB_RELEASE' | awk -F=  '{ print $2 }'`
+  elif [ -f /etc/lsb_release ] || [ -f /usr/bin/lsb_release ] ; then
+        DIST=`lsb_release -a 2>&1 | grep 'Distributor ID:' | awk -F ":" '{print $2 }'`
+        REV=`lsb_release -a 2>&1 | grep 'Release:' | awk -F ":" '{print $2 }'`
+        DISTRIB_CODENAME=`lsb_release -a 2>&1 | grep 'Codename:' | awk -F ":" '{print $2 }'`
+        DISTRIB_RELEASE=`lsb_release -a 2>&1 | grep 'Release:' | awk -F ":" '{print $2 }'`
+  elif [ -f /etc/os-release ] ; then
+        DISTRIB_CODENAME=$(grep "VERSION=" /etc/os-release |awk -F= {' print $2'}|sed s/\"//g |sed s/[0-9]//g | sed s/\)$//g |sed s/\(//g | tr -d '[:space:]')
+        DISTRIB_RELEASE=$(grep "VERSION_ID=" /etc/os-release |awk -F= {' print $2'}|sed s/\"//g |sed s/[0-9]//g | sed s/\)$//g |sed s/\(//g | tr -d '[:space:]')
+  fi
+
+  DIST=`echo "$DIST" | tr '[:upper:]' '[:lower:]' | xargs`;
+  DISTRIB_CODENAME=`echo "$DISTRIB_CODENAME" | tr '[:upper:]' '[:lower:]' | xargs`;
+  REV=`echo "$REV" | xargs`;
+
   if [ ! -f /etc/centos-release ]; then 
 	if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
    	   mkdir -p -m 700 $HOME/.gnupg
@@ -131,8 +151,17 @@ function prepare_vm() {
   	   chmod 644 /usr/share/keyrings/onlyoffice.gpg
 	fi
 
-  	apt-get remove postfix -y 
-  	echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
+	if [ "${DIST}" = "debian" ]; then
+	     apt-get remove postfix -y
+             echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
+
+	     if [ "${DISTRIB_CODENAME}" == "stretch" ]; then
+	         echo "${COLOR_RED}Debian 9 (Stretch) detected. Update security repository${COLOR_RESET}"
+		 echo "deb [trusted=yes] http://archive.debian.org/debian/ stretch main non-free contrib" > /etc/apt/sources.list
+                 echo "deb-src [trusted=yes] http://archive.debian.org/debian/ stretch main non-free contrib" > /etc/apt/sources.list
+                 echo "deb [trusted=yes] http://archive.debian.org/debian-security/ stretch/updates main non-free contrib" > /etc/apt/sources.list
+             fi
+        fi
   fi
 
   if cat /etc/os-release | grep xenial; then
