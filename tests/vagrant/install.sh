@@ -154,13 +154,6 @@ function prepare_vm() {
 	if [ "${DIST}" = "debian" ]; then
 	     apt-get remove postfix -y
              echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
-
-	     if [ "${DISTRIB_CODENAME}" == "stretch" ]; then
-	         echo "${COLOR_RED}Debian 9 (Stretch) detected. Update security repository${COLOR_RESET}"
-		 echo "deb [trusted=yes] http://archive.debian.org/debian/ stretch main non-free contrib" > /etc/apt/sources.list
-                 echo "deb-src [trusted=yes] http://archive.debian.org/debian/ stretch main non-free contrib" > /etc/apt/sources.list
-                 echo "deb [trusted=yes] http://archive.debian.org/debian-security/ stretch/updates main non-free contrib" > /etc/apt/sources.list
-             fi
         fi
   fi
 
