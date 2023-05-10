@@ -31,7 +31,6 @@ jobs:
           - centos7
           - centos8s
           - centos9s
-          - debian9
           - debian10
           - debian11
           - ubuntu1804
