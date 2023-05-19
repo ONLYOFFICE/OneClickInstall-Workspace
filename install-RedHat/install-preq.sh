@@ -121,7 +121,7 @@ module_hotfixes=true
 END
 
 # add nodejs repo
-curl -sL https://rpm.nodesource.com/setup_12.x | sed 's/centos|/'$DIST'|/g' |  sudo bash - || true
+curl -sL https://rpm.nodesource.com/setup_16.x | sed 's/centos|/'$DIST'|/g' | bash - || true
 rpm --import http://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
 
 if ! rpm -q mysql-community-server; then
