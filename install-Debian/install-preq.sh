@@ -106,7 +106,7 @@ if [ "$DISTRIB_CODENAME" = "lunar" ]; then sed -i 's/lunar/focal/g' /etc/apt/sou
 
 apt-get update
 
-node_version=$(apt-cache madison nodejs | grep "| 12." | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
+node_version=$(apt-cache madison nodejs | grep "| 16." | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 mono_complete_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
 #add nginx repo

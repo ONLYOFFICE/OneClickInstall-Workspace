@@ -154,6 +154,7 @@ yum -y install epel-release \
 			make \
 			SDL2 $POWERTOOLS_REPO \
 			snapd \
+			nodejs \
 			dotnet-sdk-7.0 $DOTNET_HOST
 			
 yum versionlock mono-complete
