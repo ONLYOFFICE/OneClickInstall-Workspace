@@ -93,7 +93,7 @@ jobs:
   Update-test:
     name: "Update test on ${{ matrix.boxes }}"
     runs-on: macos-12
-    if: github.event_name == 'pull_request'
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
     strategy:
       fail-fast: false
       matrix:
