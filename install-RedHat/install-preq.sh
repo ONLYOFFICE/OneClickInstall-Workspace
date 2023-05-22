@@ -210,7 +210,12 @@ fi
 
 yum -y install ffmpeg ffmpeg-devel $TESTING_REPO
 			
-curl -O https://bootstrap.pypa.io/get-pip.py
+py3_version=$(python3 -c 'import sys; print(sys.version_info.minor)')
+if [[ $py3_version -lt 6 ]]; then
+	curl -O https://bootstrap.pypa.io/pip/3.$py3_version/get-pip.py
+else
+	curl -O https://bootstrap.pypa.io/get-pip.py
+fi
 python3 get-pip.py || true
 rm get-pip.py
 			
