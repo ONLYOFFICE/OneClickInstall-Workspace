@@ -49,13 +49,12 @@ fi
 echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://download.mono-project.com/repo/$DIST stable-$DISTRIB_CODENAME/snapshots/6.8.0.123 main" | tee /etc/apt/sources.list.d/mono-official.list
 if [ "$DISTRIB_CODENAME" = "bullseye" ]; then sed -i 's/stable-bullseye/stable-buster/g' /etc/apt/sources.list.d/mono-official.list; fi; #Fix missing repository for bullseye
 if [ "$DISTRIB_CODENAME" = "jammy" ]; then sed -i 's/stable-jammy/stable-focal/g' /etc/apt/sources.list.d/mono-official.list; fi; #Fix missing repository for jammy
-if [ "$DISTRIB_CODENAME" = "lunar" ]; then sed -i 's/stable-lunar/stable-focal/g' /etc/apt/sources.list.d/mono-official.list; fi; #Fix missing repository for lunar
 
 gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 chmod 644 /usr/share/keyrings/mono-official-stable.gpg
 mono_complete_package_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
-if [[ "$DIST" = "ubuntu" || "$DIST" = "debian" ]] && [[ "$DISTRIB_CODENAME" = "focal" || "$DISTRIB_CODENAME" = "bullseye" || "$DISTRIB_CODENAME" = "jammy" || "$DISTRIB_CODENAME" = "lunar" ]]; then
+if [[ "$DIST" = "ubuntu" || "$DIST" = "debian" ]] && [[ "$DISTRIB_CODENAME" = "focal" || "$DISTRIB_CODENAME" = "bullseye" || "$DISTRIB_CODENAME" = "jammy" ]]; then
 	echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu focal main" | tee /etc/apt/sources.list.d/mono-extra.list  
 	hyperfastcgi_version="0.4-8"
 elif [[ "$DIST" = "ubuntu" || "$DIST" = "debian" ]] && [[ "$DISTRIB_CODENAME" = "bionic" || "$DISTRIB_CODENAME" = "buster"  ]]; then
@@ -102,7 +101,6 @@ echo "deb-src [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesou
 curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nodesource.gpg --import
 chmod 644 /usr/share/keyrings/nodesource.gpg
 if [ "$DISTRIB_CODENAME" = "jammy" ]; then sed -i 's/jammy/focal/g' /etc/apt/sources.list.d/nodesource.list; fi; #Fix missing repository for jammy
-if [ "$DISTRIB_CODENAME" = "lunar" ]; then sed -i 's/lunar/focal/g' /etc/apt/sources.list.d/nodesource.list; fi; #Fix missing repository for lunar
 
 apt-get update
 
@@ -113,7 +111,6 @@ mono_complete_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | s
 curl -s http://nginx.org/keys/nginx_signing.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nginx.gpg --import
 chmod 644 /usr/share/keyrings/nginx.gpg
 echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/$DIST/ $DISTRIB_CODENAME nginx" | tee /etc/apt/sources.list.d/nginx.list
-if [ "$DISTRIB_CODENAME" = "lunar" ]; then sed -i 's/lunar/jammy/g' /etc/apt/sources.list.d/nginx.list; fi; #Fix missing repository for lunar
 
 # setup msttcorefonts
 echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
@@ -154,7 +151,7 @@ if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
 fi
 
 # add certbot repo
-if [ "$DIST" = "ubuntu" ] && [[ "$DISTRIB_CODENAME" = "focal" || "$DISTRIB_CODENAME" = "jammy" || "$DISTRIB_CODENAME" = "lunar" ]]; then
+if [ "$DIST" = "ubuntu" ] && [[ "$DISTRIB_CODENAME" = "focal" || "$DISTRIB_CODENAME" = "jammy" ]]; then
 	if ! command_exists snap; then
 		apt-get -y install snapd
 	fi
