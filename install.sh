@@ -675,7 +675,7 @@ get_os_info () {
 			fi
 		fi
 
-		DIST=$(trim $DIST);
+		DIST=$(trim "$DIST");
 		REV=$(trim $REV);
 	fi
 }
