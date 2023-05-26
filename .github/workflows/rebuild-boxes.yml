@@ -1,14 +1,15 @@
 name: Rebuild Boxes
 
 on:
-  push:
-    branches:
-      - master
-    paths-ignore:
-      - '**/README.md'
-      - '**/LICENSE'
-      - '.github/**'
-      - 'tests/**'
+  #Auto-rebuild trigger disabled now.
+  #push:
+    #branches:
+      #- master
+    #paths-ignore:
+      #- '**/README.md'
+      #- '**/LICENSE'
+      #- '.github/**'
+      #- 'tests/**'
   workflow_dispatch:
 
 env: 
