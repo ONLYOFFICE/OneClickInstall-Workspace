@@ -121,7 +121,7 @@ module_hotfixes=true
 END
 
 # add nodejs repo
-curl -sL https://rpm.nodesource.com/setup_12.x | sed 's/centos|/'$DIST'|/g' |  sudo bash - || true
+curl -sL https://rpm.nodesource.com/setup_16.x | sed 's/centos|/'$DIST'|/g' | bash - || true
 rpm --import http://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
 
 if ! rpm -q mysql-community-server; then
@@ -154,6 +154,7 @@ yum -y install epel-release \
 			make \
 			SDL2 $POWERTOOLS_REPO \
 			snapd \
+			nodejs \
 			dotnet-sdk-7.0 $DOTNET_HOST
 			
 yum versionlock mono-complete
@@ -209,7 +210,12 @@ fi
 
 yum -y install ffmpeg ffmpeg-devel $TESTING_REPO
 			
-curl -O https://bootstrap.pypa.io/get-pip.py
+py3_version=$(python3 -c 'import sys; print(sys.version_info.minor)')
+if [[ $py3_version -lt 6 ]]; then
+	curl -O https://bootstrap.pypa.io/pip/3.$py3_version/get-pip.py
+else
+	curl -O https://bootstrap.pypa.io/get-pip.py
+fi
 python3 get-pip.py || true
 rm get-pip.py
 			

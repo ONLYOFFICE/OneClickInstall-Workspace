@@ -96,15 +96,15 @@ if [ -z $ELASTICSEARCH_REPOSITORY ]; then
 	echo "deb [signed-by=/usr/share/keyrings/elastic-7.x.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-7.x.list
 fi
 # add nodejs repo
-echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_12.x $DISTRIB_CODENAME main" | tee /etc/apt/sources.list.d/nodesource.list
-echo "deb-src [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_12.x $DISTRIB_CODENAME main" >> /etc/apt/sources.list.d/nodesource.list
+echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x $DISTRIB_CODENAME main" | tee /etc/apt/sources.list.d/nodesource.list
+echo "deb-src [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x $DISTRIB_CODENAME main" >> /etc/apt/sources.list.d/nodesource.list
 curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nodesource.gpg --import
 chmod 644 /usr/share/keyrings/nodesource.gpg
 if [ "$DISTRIB_CODENAME" = "jammy" ]; then sed -i 's/jammy/focal/g' /etc/apt/sources.list.d/nodesource.list; fi; #Fix missing repository for jammy
 
 apt-get update
 
-node_version=$(apt-cache madison nodejs | grep "| 12." | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
+node_version=$(apt-cache madison nodejs | grep "| 16." | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 mono_complete_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
 #add nginx repo
