@@ -955,11 +955,11 @@ get_available_version () {
 	fi
 
 	if ! command_exists curl ; then
-		install_curl;
+		install_curl >/dev/null 2>&1
 	fi
 
 	if ! command_exists jq ; then
-		install_jq
+		install_jq >/dev/null 2>&1
 	fi
 
 	CREDENTIALS="";
