@@ -113,4 +113,4 @@ DIST=`echo "$DIST" | tr '[:upper:]' '[:lower:]' | xargs`;
 DISTRIB_CODENAME=`echo "$DISTRIB_CODENAME" | tr '[:upper:]' '[:lower:]' | xargs`;
 REV=`echo "$REV" | xargs`;
 
-[ "$DISTRIB_CODENAME" = "kinetic" ] || [ "$DISTRIB_CODENAME" = "lunar" ] && DISTRIB_CODENAME="jammy" && REV="22.04"
+[ "$DISTRIB_CODENAME" = "kinetic" ] || [ "$DISTRIB_CODENAME" = "lunar" ] && { DISTRIB_CODENAME="jammy"; REV="22.04"; } || true
