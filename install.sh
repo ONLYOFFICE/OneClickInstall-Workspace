@@ -1105,7 +1105,14 @@ install_mysql_server () {
 	if [[ -n ${MYSQL_SERVER_ID} ]]; then
 		RUN_MYSQL_SERVER="false";
 		echo "ONLYOFFICE MYSQL SERVER is already installed."
-		docker start ${MYSQL_SERVER_ID};
+		if [[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -lt "8000000000" ]]; then
+			if ! grep -q "tls_version" ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf; then
+				echo "tls_version = TLSv1.2" >> ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf 
+			else
+				sed -i "s/tls_version.*/tls_version = TLSv1.2/" ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
+			fi
+		fi
+		docker restart ${MYSQL_SERVER_ID};
 	fi
 
 	if [ "$RUN_MYSQL_SERVER" == "true" ]; then
@@ -1117,6 +1124,7 @@ max_connections = 1000
 max_allowed_packet = 1048576000
 group_concat_max_len = 2048
 log-error = /var/log/mysql/error.log" > ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
+			[[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -lt "8000000000" ]] && echo "tls_version = TLSv1.2" >> ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			chmod 0644 ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 		fi
 
@@ -2316,14 +2324,11 @@ start_installation () {
 	create_network
 
 	if [[ -z ${MYSQL_HOST} ]]; then
-		MYSQL_SERVER_ID=$(get_container_id "$MYSQL_CONTAINER_NAME");
-		if [[ -z ${MYSQL_SERVER_ID} ]]; then
-			if [ "$INSTALL_MAIL_SERVER" == "true" ] || [ "$INSTALL_COMMUNITY_SERVER" == "true" ]; then
-				pull_mysql_server
-				install_mysql_server
-			elif [ "$INSTALL_MAIL_SERVER" == "pull" ] || [ "$INSTALL_COMMUNITY_SERVER" == "pull" ]; then
-				pull_mysql_server
-			fi
+		if [ "$INSTALL_MAIL_SERVER" == "true" ] || [ "$INSTALL_COMMUNITY_SERVER" == "true" ]; then
+			pull_mysql_server
+			install_mysql_server
+		elif [ "$INSTALL_MAIL_SERVER" == "pull" ] || [ "$INSTALL_COMMUNITY_SERVER" == "pull" ]; then
+			pull_mysql_server
 		fi
 	else
 		ping_host_port "$MYSQL_HOST" "$MYSQL_PORT"
