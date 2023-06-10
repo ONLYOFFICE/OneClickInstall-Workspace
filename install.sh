@@ -1108,6 +1108,7 @@ install_mysql_server () {
 		if [[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -lt "8000000000" ]]; then
 			if ! grep -q "tls_version" ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf; then
 				echo "tls_version = TLSv1.2" >> ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf 
+				echo "" > $BASE_DIR/CommunityServer/data/.private/release_date
 			else
 				sed -i "s/tls_version.*/tls_version = TLSv1.2/" ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			fi
