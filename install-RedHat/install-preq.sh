@@ -59,11 +59,11 @@ yum localinstall -y --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusi
 if [ "$REV" = "9" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"};
 	MONOREV="8"
-	TESTING_REPO="--enablerepo=crb"
-	yum localinstall -y --nogpgcheck https://vault.centos.org/centos/8/AppStream/x86_64/os/Packages/xorg-x11-font-utils-7.5-41.el8.x86_64.rpm
+	[ $DIST != "redhat" ] && TESTING_REPO="--enablerepo=crb" || /usr/bin/crb enable
+	update-crypto-policies --set DEFAULT:SHA1
 elif [ "$REV" = "8" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"};
-	POWERTOOLS_REPO="--enablerepo=powertools"
+	[ $DIST != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
 elif [ "$REV" = "7" ] ; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-6"};
 fi
