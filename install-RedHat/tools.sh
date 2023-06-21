@@ -108,6 +108,7 @@ read_rabbitmq_update () {
 		y|Y )
 			rm -rf /var/lib/rabbitmq/mnesia/$(rabbitmqctl eval "node().")
 			yum -y remove rabbitmq-server erlang* 
+			[ -f "/etc/yum.repos.d/rabbitmq-server.repo" ] && rm /etc/yum.repos.d/rabbitmq-server.repo
 		;;
 
 		n|N )
