@@ -47,17 +47,17 @@ fi
 
 # add mono extra repo
 echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://download.mono-project.com/repo/$DIST stable-$DISTRIB_CODENAME/snapshots/6.8.0.123 main" | tee /etc/apt/sources.list.d/mono-official.list
-if [ "$DISTRIB_CODENAME" = "bullseye" ]; then sed -i 's/stable-bullseye/stable-buster/g' /etc/apt/sources.list.d/mono-official.list; fi; #Fix missing repository for bullseye
-if [ "$DISTRIB_CODENAME" = "jammy" ]; then sed -i 's/stable-jammy/stable-focal/g' /etc/apt/sources.list.d/mono-official.list; fi; #Fix missing repository for jammy
+#Fix missing repository for $DISTRIB_CODENAME
+[[ "$DISTRIB_CODENAME" =~ ^(jammy|bullseye|bookworm)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-buster/g" /etc/apt/sources.list.d/mono-official.list
 
 gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 chmod 644 /usr/share/keyrings/mono-official-stable.gpg
 mono_complete_package_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
-if [[ "$DIST" = "ubuntu" || "$DIST" = "debian" ]] && [[ "$DISTRIB_CODENAME" = "focal" || "$DISTRIB_CODENAME" = "bullseye" || "$DISTRIB_CODENAME" = "jammy" ]]; then
+if [[ "$DISTRIB_CODENAME" =~ ^(focal|bullseye|jammy|bookworm)$ ]]; then
 	echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu focal main" | tee /etc/apt/sources.list.d/mono-extra.list  
 	hyperfastcgi_version="0.4-8"
-elif [[ "$DIST" = "ubuntu" || "$DIST" = "debian" ]] && [[ "$DISTRIB_CODENAME" = "bionic" || "$DISTRIB_CODENAME" = "buster"  ]]; then
+elif [[ "$DISTRIB_CODENAME" =~ ^(bionic|buster)$ ]]; then
 	echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu bionic main" | tee /etc/apt/sources.list.d/mono-extra.list  
 	hyperfastcgi_version="0.4-7"
 else
@@ -84,6 +84,9 @@ fi
 #add dotnet repo
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
 	curl https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
+elif [ "$DISTRIB_CODENAME" = "bookworm" ]; then
+	#Temporary fix for missing dotnet repository for debian bookworm
+	curl https://packages.microsoft.com/config/$DIST/11/packages-microsoft-prod.deb -O
 else
 	curl https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
 fi
@@ -101,7 +104,6 @@ echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.
 echo "deb-src [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x $DISTRIB_CODENAME main" >> /etc/apt/sources.list.d/nodesource.list
 curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nodesource.gpg --import
 chmod 644 /usr/share/keyrings/nodesource.gpg
-if [ "$DISTRIB_CODENAME" = "jammy" ]; then sed -i 's/jammy/focal/g' /etc/apt/sources.list.d/nodesource.list; fi; #Fix missing repository for jammy
 
 apt-get update
 
@@ -112,6 +114,8 @@ mono_complete_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | s
 curl -s http://nginx.org/keys/nginx_signing.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nginx.gpg --import
 chmod 644 /usr/share/keyrings/nginx.gpg
 echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/$DIST/ $DISTRIB_CODENAME nginx" | tee /etc/apt/sources.list.d/nginx.list
+#Temporary fix for missing nginx repository for debian bookworm
+[ "$DISTRIB_CODENAME" = "bookworm" ] && sed -i "s/$DISTRIB_CODENAME/buster/g" /etc/apt/sources.list.d/nginx.list
 
 # setup msttcorefonts
 echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
@@ -131,6 +135,8 @@ echo "mysql-apt-config mysql-apt-config/repo-codename  select  $DISTRIB_CODENAME
 echo "mysql-apt-config mysql-apt-config/repo-distro  select  $DIST" | debconf-set-selections
 echo "mysql-apt-config mysql-apt-config/select-server  select  mysql-8.0" | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive dpkg -i ${MYSQL_PACKAGE_NAME}
+#Temporary fix for missing mysql repository for debian bookworm
+[ "$DISTRIB_CODENAME" = "bookworm" ] && sed -i "s/$DIST/ubuntu/g; s/$DISTRIB_CODENAME/jammy/g" /etc/apt/sources.list.d/mysql.list
 rm -f ${MYSQL_PACKAGE_NAME}
 
 echo mysql-community-server mysql-community-server/root-pass password ${MYSQL_SERVER_PASS} | debconf-set-selections
@@ -161,7 +167,7 @@ elif [ "$DIST" = "ubuntu" ]; then
 	add-apt-repository -y ppa:certbot/certbot
 	apt-get -y update	
 	apt-get install -yq certbot
-elif [ "$DIST" = "debian" ] && [[ "$DISTRIB_CODENAME" = "stretch"  || "$DISTRIB_CODENAME" = "buster" || "$DISTRIB_CODENAME" = "bullseye" ]]; then
+elif [[ "$DISTRIB_CODENAME" =~ ^(stretch|buster|bullseye|bookworm)$ ]]; then
 	apt-get install -yq certbot
 elif [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "jessie" ]; then # Debian 8
 	echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie_backports.list
