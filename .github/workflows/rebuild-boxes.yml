@@ -33,7 +33,7 @@ jobs:
         unclude:
           - distributor: "debian"
             boxes: "bookworm64"
-   steps:
+    steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
