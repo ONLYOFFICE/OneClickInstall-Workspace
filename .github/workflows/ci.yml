@@ -67,6 +67,15 @@ jobs:
     secrets:
       access-token: ${{ secrets.ACCESS_TOKEN }}
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
+  spin-debian12:
+    name: Make debian12 runner
+    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
+    with:
+      name: gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
+      label: bookworm64
+    secrets:
+      access-token: ${{ secrets.ACCESS_TOKEN }}
+      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   spin-ubuntu18: 
     name: Make ubuntu18 runner
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
@@ -126,6 +135,13 @@ jobs:
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
     with:
       distr: debian11
+  tests-debian12:
+    needs: spin-debian12
+    name: Tests on debian12 Bookworm
+    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
+    with:
+      author: debian
+      distr: bookworm64
   tests-ubuntu18:
     needs: spin-ubuntu18
     name: Tests on ubuntu1804
@@ -192,6 +208,16 @@ jobs:
     needs: tests-debian11
     if: always()
     name: destroy-debian-11
+    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
+    with:
+      name: gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
+    secrets:
+      access-token: ${{ secrets.ACCESS_TOKEN }}
+      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
+  destroy-debian12:
+    needs: tests-debian12
+    if: always()
+    name: destroy-debian-12
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
       name: gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
