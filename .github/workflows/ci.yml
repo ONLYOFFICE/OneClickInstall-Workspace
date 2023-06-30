@@ -71,7 +71,7 @@ jobs:
     name: Make debian12 runner
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with:
-      name: gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
+      name: gha-runner-debian12-${{ github.run_id }}-${{ github.run_number }}
       label: bookworm64
     secrets:
       access-token: ${{ secrets.ACCESS_TOKEN }}
@@ -220,7 +220,7 @@ jobs:
     name: destroy-debian-12
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
-      name: gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
+      name: gha-runner-debian12-${{ github.run_id }}-${{ github.run_number }}
     secrets:
       access-token: ${{ secrets.ACCESS_TOKEN }}
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
