@@ -28,6 +28,7 @@ jobs:
           - centos9s
           - debian10
           - debian11
+         #- bookworm64
           - ubuntu1804
           - ubuntu2004
           - ubuntu2204

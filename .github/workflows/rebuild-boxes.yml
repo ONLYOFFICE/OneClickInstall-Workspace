@@ -28,15 +28,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        boxes: 
-          - centos7
-          - centos8s
-          - centos9s
-          - debian10
-          - debian11
-          - ubuntu1804
-          - ubuntu2004
-          - ubuntu2204
+        distributor: ["generic"]
+        boxes: ["centos7", "centos8s", "centos9s", "debian10", "debian11", "ubuntu1804", "ubuntu2004", "ubuntu2204"]
+        unclude:
+          - distributor: "debian"
+            boxes: "bookworm64"
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -62,7 +58,7 @@ jobs:
                 export date=$(date +%F)
                 sleep 300
                    TEST_CASE='--production-install' \
-                   DISTR='generic' \
+                   DISTR='${{ matrix.distributor }}' \
                    OS='${{ matrix.boxes }}' \
                    DOWNLOAD_SCRIPT='-ds true' \
                    RAM='9100' \
