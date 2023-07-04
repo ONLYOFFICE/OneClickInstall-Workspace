@@ -23,7 +23,7 @@ if ! dpkg -l | grep -q "dirmngr"; then
 fi
 
 if ! dpkg -l | grep -q "debian-archive-keyring"; then
-	apt-get install -yq debian-archive-keyring
+	apt-get install -yq debian-archive-keyring || true
 fi
 
 if ! dpkg -l | grep -q "debconf-utils"; then
