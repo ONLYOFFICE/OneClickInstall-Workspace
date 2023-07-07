@@ -181,7 +181,6 @@ fi
 # install
 apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				cron \
-				rsyslog \
 				ruby-dev \
 				ruby-god \
 				mono-complete=$mono_complete_version \
@@ -204,6 +203,10 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 
 if apt-cache search --names-only '^ffmpeg$' | grep -q "ffmpeg"; then
 	apt-get install -yq ffmpeg
+fi
+	
+if ! dpkg -s syslog-ng; then
+	apt-get install -yq rsyslog
 fi
 		
 if [ -e /etc/redis/redis.conf ]; then
