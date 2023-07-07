@@ -53,7 +53,7 @@ fi
 
 #Add repositories: EPEL, REMI and RPMFUSION
 rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-$REV.noarch.rpm || true
-rpm -ivh https://rpms.remirepo.net/enterprise/remi-release-$REV.rpm || true
+rpm -ivh http://rpms.remirepo.net/enterprise/remi-release-$REV.rpm || true
 yum localinstall -y --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$REV.noarch.rpm
 
 if [ "$REV" = "9" ]; then
@@ -69,8 +69,25 @@ elif [ "$REV" = "7" ] ; then
 fi
 
 #add rabbitmq & erlang repo
-curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$MONOREV bash
-curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$MONOREV bash
+if [ "$MONOREV" -gt "7" ]; then
+	curl -s http://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$MONOREV bash
+	curl -s http://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$MONOREV bash
+else
+	cat > /etc/yum.repos.d/rabbitmq_rabbitmq-server.repo <<END
+[rabbitmq_rabbitmq-server]
+name=rabbitmq_rabbitmq-server
+baseurl=https://packagecloud.io/rabbitmq/rabbitmq-server/el/7/\$basearch
+gpgcheck=0
+enabled=1
+END
+	cat > /etc/yum.repos.d/rabbitmq_erlang.repo <<END
+[rabbitmq_erlang]
+name=rabbitmq_erlang
+baseurl=https://packagecloud.io/rabbitmq/erlang/el/7/\$basearch
+gpgcheck=0
+enabled=1
+END
+fi
 
 if rpm -q rabbitmq-server; then
 	if [ "$(yum list installed rabbitmq-server | awk '/rabbitmq-server/ {gsub(/@/, "", $NF); print $NF}')" != "$(repoquery rabbitmq-server --qf='%{ui_from_repo}' | tail -n 1)" ]; then
@@ -113,7 +130,7 @@ su -c "curl https://download.mono-project.com/repo/centos$MONOREV-stable.repo | 
 cat > /etc/yum.repos.d/nginx.repo <<END
 [nginx-stable]
 name=nginx stable repo
-baseurl=https://nginx.org/packages/centos/$REV/\$basearch/
+baseurl=http://nginx.org/packages/centos/$REV/\$basearch/
 gpgcheck=1
 enabled=1
 gpgkey=https://nginx.org/keys/nginx_signing.key
