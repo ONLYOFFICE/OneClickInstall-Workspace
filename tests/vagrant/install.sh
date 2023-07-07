@@ -206,8 +206,10 @@ END
 function install_workspace() {
 	if [ "${DOWNLOAD_SCRIPTS}" == 'true' ]; then
             wget https://download.onlyoffice.com/install/workspace-install.sh
-        fi
-        
+  else
+    sed 's/set -e/set -xe/' -i *.sh
+  fi
+
 	printf "N\nY\nY" | bash workspace-install.sh ${ARGUMENTS}
 
 	if [[ $? != 0 ]]; then
