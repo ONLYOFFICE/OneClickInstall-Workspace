@@ -70,8 +70,8 @@ fi
 
 #add rabbitmq & erlang repo
 if [ "$MONOREV" -gt "7" ]; then
-	curl -s http://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
-	curl -s http://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$REV bash
+	curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
+	curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$REV bash
 else
 	cat > /etc/yum.repos.d/rabbitmq_rabbitmq-server.repo <<END
 [rabbitmq_rabbitmq-server]
