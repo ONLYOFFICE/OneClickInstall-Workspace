@@ -45,6 +45,13 @@ if [ "$DISTRIB_CODENAME" = "jammy" ] && [ $(apt-cache search "libevent-2.1-7$" |
     rm -f /etc/apt/sources.list.d/$DISTRIB_CODENAME.list
 fi
 
+#Fix package 'libjpeg62-turbo' has no installation candidate
+if [ "$DIST" = "ubuntu" ] && [ $(apt-cache search libjpeg62-turbo | wc -l) -eq 0 ]; then
+	LIBJPEG62_PACKAGE=$(curl -s https://packages.debian.org/sid/$(dpkg --print-architecture)/libjpeg62-turbo/download | grep -oP "libjpeg62-turbo_\d+\.\d+\.\d+-\d+_$(dpkg --print-architecture)\.deb" | head -n 1)
+	curl -O http://ftp.debian.org/debian/pool/main/libj/libjpeg-turbo/${LIBJPEG62_PACKAGE}
+	dpkg -i ${LIBJPEG62_PACKAGE} && rm ${LIBJPEG62_PACKAGE}
+fi
+
 # add mono extra repo
 echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://download.mono-project.com/repo/$DIST stable-$DISTRIB_CODENAME/snapshots/6.8.0.123 main" | tee /etc/apt/sources.list.d/mono-official.list
 #Fix missing repository for $DISTRIB_CODENAME
