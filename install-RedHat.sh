@@ -15,9 +15,10 @@ RES_PROPOSAL="You can now configure your portal using the Control Panel";
 RES_QUESTIONS="In case you have any questions contact us via http://support.onlyoffice.com or visit our forum at http://forum.onlyoffice.com"
 RES_MARIADB="To continue the installation, you need to remove MariaDB"
 
+RES_CHOICE="Please, enter Y or N"
+RES_CHOICE_INSTALLATION="Continue installation [Y/N]? "
+
 res_unsupported_version () {
-	RES_CHOICE="Please, enter Y or N"
-	RES_CHOICE_INSTALLATION="Continue installation [Y/N]? "
 	RES_UNSPPORTED_VERSION="You have an unsupported version of $DIST installed"
 	RES_SELECT_INSTALLATION="Select 'N' to cancel the ONLYOFFICE installation (recommended). Select 'Y' to continue installing ONLYOFFICE"
 	RES_ERROR_REMINDER="Please note, that if you continue with the installation, there may be errors"
@@ -27,7 +28,6 @@ res_rabbitmq_update () {
 	RES_RABBITMQ_VERSION="You have an old version of RabbitMQ installed. The update will cause the RabbitMQ database to be deleted."
 	RES_RABBITMQ_REMINDER="If you use the database only in the ONLYOFFICE configuration, then the update will be safe for you."
 	RES_RABBITMQ_INSTALLATION="Select 'Y' to install the new version of RabbitMQ (recommended). Select 'N' to keep the current version of RabbitMQ."
-	RES_CHOICE_RABBITMQ="Install a new version of RabbitMQ [Y/N]?"
 }
 
 while [ "$1" != "" ]; do

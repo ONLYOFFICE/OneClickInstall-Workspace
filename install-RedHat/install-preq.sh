@@ -32,7 +32,11 @@ if [[ $exitCode -eq $UPDATE_AVAILABLE_CODE ]]; then
 	echo $RES_SELECT_INSTALLATION
 	echo $RES_ERROR_REMINDER
 	echo $RES_QUESTIONS
-	read_unsupported_installation
+	if read_continue_installation; then
+		yum -y install $DIST*-release
+	else
+		exit 0;
+	fi
 fi
 
 if rpm -qa | grep mariadb.*config >/dev/null 2>&1; then
@@ -95,7 +99,13 @@ if rpm -q rabbitmq-server; then
 		echo $RES_RABBITMQ_VERSION
 		echo $RES_RABBITMQ_REMINDER
 		echo $RES_RABBITMQ_INSTALLATION
-		read_rabbitmq_update
+		if read_continue_installation; then
+			rm -rf /var/lib/rabbitmq/mnesia/$(rabbitmqctl eval "node().")
+			yum -y remove rabbitmq-server erlang* 
+			[ -f "/etc/yum.repos.d/rabbitmq-server.repo" ] && rm -f /etc/yum.repos.d/rabbitmq-server.repo || true
+		else
+			rm -f /etc/yum.repos.d/rabbitmq_*
+		fi
 	fi
 fi
 

@@ -50,40 +50,20 @@ if [ "$SKIP_HARDWARE_CHECK" != "true" ]; then
 	check_hardware
 fi
 
-read_unsupported_installation () {
+read_continue_installation () {
 	read -p "$RES_CHOICE_INSTALLATION " CHOICE_INSTALLATION
 	case "$CHOICE_INSTALLATION" in
 		y|Y )
-			yum -y install $DIST*-release
+			return 0
 		;;
 
 		n|N )
-			exit 0;
+			return 1
 		;;
 
 		* )
 			echo $RES_CHOICE;
-			read_unsupported_installation
-		;;
-	esac
-}
-
-read_rabbitmq_update () {
-	read -p "$RES_CHOICE_RABBITMQ " CHOICE_INSTALLATION
-	case "$CHOICE_INSTALLATION" in
-		y|Y )
-			rm -rf /var/lib/rabbitmq/mnesia/$(rabbitmqctl eval "node().")
-			yum -y remove rabbitmq-server erlang* 
-			[ -f "/etc/yum.repos.d/rabbitmq-server.repo" ] && rm /etc/yum.repos.d/rabbitmq-server.repo
-		;;
-
-		n|N )
-			rm -f /etc/yum.repos.d/rabbitmq_*
-		;;
-
-		* )
-			echo $RES_CHOICE;
-			read_rabbitmq_update
+			read_continue_installation
 		;;
 	esac
 }
