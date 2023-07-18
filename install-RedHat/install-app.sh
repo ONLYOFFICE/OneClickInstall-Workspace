@@ -220,7 +220,7 @@ if [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 					ELASTIC_PACKAGE_REQUIRED="elasticsearch-7.16.3-x86_64.rpm"
 					curl -O ${ELASTICSEARCH_REPOSITORY:-https://artifacts.elastic.co/downloads/elasticsearch/}${ELASTIC_PACKAGE_REQUIRED}
 				fi
-				apt-get install --reinstall --download-only $ELASTIC_PACKAGE_REQUIRED $ELASTIC_UPDATED_VERSION ${package_sysname}-communityserver
+				apt-get install --reinstall --download-only -y $ELASTIC_PACKAGE_REQUIRED $ELASTIC_UPDATED_VERSION ${package_sysname}-communityserver
 				mv -f /var/cache/apt/archives/${package_sysname}-communityserver_$COMMUNITY_LATEST_VERSION* ${package_sysname}-communityserver.rpm
 				COMMUNITY_UPDATED_VERSION=${package_sysname}-communityserver.rpm
 			fi
