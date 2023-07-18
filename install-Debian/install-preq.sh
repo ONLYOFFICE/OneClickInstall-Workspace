@@ -154,6 +154,9 @@ elif dpkg -l | grep -q "mysql-apt-config" && [ "$(apt-cache policy mysql-apt-con
 	apt-get -y update
 fi
 
+CURRENT_MYSQL_VERSION=$(dpkg-query -W -f='${Version}' "mysql-client")
+AVAILABLE_MYSQL_VERSION=$(apt-cache show "mysql-client" | awk '/Version:/{print $2}' | sort -V | tail -n 1)
+
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
 	apt-get install -yq mysql-server mysql-client --allow-unauthenticated
 fi
