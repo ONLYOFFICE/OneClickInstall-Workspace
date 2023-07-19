@@ -85,9 +85,6 @@ fi
 #add dotnet repo
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
 	curl https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
-elif [ "$DISTRIB_CODENAME" = "bookworm" ]; then
-	#Temporary fix for missing dotnet repository for debian bookworm
-	curl https://packages.microsoft.com/config/$DIST/11/packages-microsoft-prod.deb -O
 else
 	curl https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
 fi
