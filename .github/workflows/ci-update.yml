@@ -1,4 +1,4 @@
-name: OneClickTests
+name: OneClickTests-Update
   
 run-name: >
   Update workspace from old version test.
@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
