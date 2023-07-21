@@ -34,9 +34,6 @@ if ! dpkg -l | grep -q "software-properties-common"; then
 fi
 
 locale-gen en_US.UTF-8
-if [ -f /etc/needrestart/needrestart.conf ]; then
-	sed -e "s_#\$nrconf{restart}_\$nrconf{restart}_" -e "s_\(\$nrconf{restart} =\).*_\1 'a';_" -i /etc/needrestart/needrestart.conf
-fi
 
 #Fix kinetic dependencies
 if [ "$DISTRIB_CODENAME" = "jammy" ] && [ $(apt-cache search "libevent-2.1-7$" | wc -l) -eq 0 ]; then
