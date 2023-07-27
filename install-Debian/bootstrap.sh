@@ -33,3 +33,7 @@ fi
 if ! dpkg -l | grep -q "debconf-utils"; then
 	apt-get install -yq debconf-utils
 fi
+
+if ! dpkg -l | grep -q "wget"; then
+	apt-get install -yq wget
+fi
