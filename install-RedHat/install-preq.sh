@@ -32,7 +32,11 @@ if [[ $exitCode -eq $UPDATE_AVAILABLE_CODE ]]; then
 	echo $RES_SELECT_INSTALLATION
 	echo $RES_ERROR_REMINDER
 	echo $RES_QUESTIONS
-	read_unsupported_installation
+	if read_continue_installation; then
+		yum -y install $DIST*-release
+	else
+		exit 0;
+	fi
 fi
 
 if rpm -qa | grep mariadb.*config >/dev/null 2>&1; then
@@ -53,32 +57,55 @@ fi
 
 #Add repositories: EPEL, REMI and RPMFUSION
 rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-$REV.noarch.rpm || true
-rpm -ivh https://rpms.remirepo.net/enterprise/remi-release-$REV.rpm || true
+rpm -ivh http://rpms.remirepo.net/enterprise/remi-release-$REV.rpm || true
 yum localinstall -y --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$REV.noarch.rpm
 
 if [ "$REV" = "9" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"};
 	MONOREV="8"
-	TESTING_REPO="--enablerepo=crb"
-	yum localinstall -y --nogpgcheck https://vault.centos.org/centos/8/AppStream/x86_64/os/Packages/xorg-x11-font-utils-7.5-41.el8.x86_64.rpm
+	[ $DIST != "redhat" ] && TESTING_REPO="--enablerepo=crb" || /usr/bin/crb enable
+	update-crypto-policies --set DEFAULT:SHA1
 elif [ "$REV" = "8" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"};
-	POWERTOOLS_REPO="--enablerepo=powertools"
+	[ $DIST != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
 elif [ "$REV" = "7" ] ; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-6"};
 fi
 
 #add rabbitmq & erlang repo
-curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$MONOREV bash
-curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$MONOREV bash
+if [ "$MONOREV" -gt "7" ]; then
+	curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
+	curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$REV bash
+else
+	cat > /etc/yum.repos.d/rabbitmq_rabbitmq-server.repo <<END
+[rabbitmq_rabbitmq-server]
+name=rabbitmq_rabbitmq-server
+baseurl=https://packagecloud.io/rabbitmq/rabbitmq-server/el/7/\$basearch
+gpgcheck=0
+enabled=1
+END
+	cat > /etc/yum.repos.d/rabbitmq_erlang.repo <<END
+[rabbitmq_erlang]
+name=rabbitmq_erlang
+baseurl=https://packagecloud.io/rabbitmq/erlang/el/7/\$basearch
+gpgcheck=0
+enabled=1
+END
+fi
 
 if rpm -q rabbitmq-server; then
-	if [ "$(repoquery --installed rabbitmq-server --qf '%{ui_from_repo}' | sed 's/@//')" != "$(repoquery rabbitmq-server --qf='%{ui_from_repo}')" ]; then
+	if [ "$(yum list installed rabbitmq-server | awk '/rabbitmq-server/ {gsub(/@/, "", $NF); print $NF}')" != "$(repoquery rabbitmq-server --qf='%{ui_from_repo}' | tail -n 1)" ]; then
 		res_rabbitmq_update
 		echo $RES_RABBITMQ_VERSION
 		echo $RES_RABBITMQ_REMINDER
 		echo $RES_RABBITMQ_INSTALLATION
-		read_rabbitmq_update
+		if read_continue_installation; then
+			rm -rf /var/lib/rabbitmq/mnesia/$(rabbitmqctl eval "node().")
+			yum -y remove rabbitmq-server erlang* 
+			[ -f "/etc/yum.repos.d/rabbitmq-server.repo" ] && rm -f /etc/yum.repos.d/rabbitmq-server.repo || true
+		else
+			rm -f /etc/yum.repos.d/rabbitmq_*
+		fi
 	fi
 fi
 
@@ -113,7 +140,7 @@ su -c "curl https://download.mono-project.com/repo/centos$MONOREV-stable.repo | 
 cat > /etc/yum.repos.d/nginx.repo <<END
 [nginx-stable]
 name=nginx stable repo
-baseurl=https://nginx.org/packages/centos/$REV/\$basearch/
+baseurl=http://nginx.org/packages/centos/$REV/\$basearch/
 gpgcheck=1
 enabled=1
 gpgkey=https://nginx.org/keys/nginx_signing.key

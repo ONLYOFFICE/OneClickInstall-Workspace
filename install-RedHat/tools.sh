@@ -19,40 +19,6 @@ function make_swap () {
 	fi
 }
 
-vercomp () {
-    if [[ $1 == $2 ]]
-    then
-        echo 0
-		return
-    fi
-    local IFS=.
-    local i ver1=($1) ver2=($2)
-    # fill empty fields in ver1 with zeros
-    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
-    do
-        ver1[i]=0
-    done
-    for ((i=0; i<${#ver1[@]}; i++))
-    do
-        if [[ -z ${ver2[i]} ]]
-        then
-            # fill empty fields in ver2 with zeros
-            ver2[i]=0
-        fi
-        if ((10#${ver1[i]} > 10#${ver2[i]}))
-        then
-            echo 1
-			return			
-        fi
-        if ((10#${ver1[i]} < 10#${ver2[i]}))
-        then
-            echo 2			
-			return
-        fi
-    done
-    echo 0
-}
-
 check_hardware () {
     DISK_REQUIREMENTS=40960;
     MEMORY_REQUIREMENTS=5500;
@@ -84,39 +50,20 @@ if [ "$SKIP_HARDWARE_CHECK" != "true" ]; then
 	check_hardware
 fi
 
-read_unsupported_installation () {
+read_continue_installation () {
 	read -p "$RES_CHOICE_INSTALLATION " CHOICE_INSTALLATION
 	case "$CHOICE_INSTALLATION" in
 		y|Y )
-			yum -y install $DIST*-release
+			return 0
 		;;
 
 		n|N )
-			exit 0;
+			return 1
 		;;
 
 		* )
 			echo $RES_CHOICE;
-			read_unsupported_installation
-		;;
-	esac
-}
-
-read_rabbitmq_update () {
-	read -p "$RES_CHOICE_RABBITMQ " CHOICE_INSTALLATION
-	case "$CHOICE_INSTALLATION" in
-		y|Y )
-			rm -rf /var/lib/rabbitmq/mnesia/$(rabbitmqctl eval "node().")
-			yum -y remove rabbitmq-server erlang* 
-		;;
-
-		n|N )
-			rm -f /etc/yum.repos.d/rabbitmq_*
-		;;
-
-		* )
-			echo $RES_CHOICE;
-			read_rabbitmq_update
+			read_continue_installation
 		;;
 	esac
 }

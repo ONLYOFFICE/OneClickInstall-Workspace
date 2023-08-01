@@ -10,6 +10,10 @@ cat<<EOF
 
 EOF
 
+if [ -f /etc/needrestart/needrestart.conf ]; then
+	sed -e "s_#\$nrconf{restart}_\$nrconf{restart}_" -e "s_\(\$nrconf{restart} =\).*_\1 'a';_" -i /etc/needrestart/needrestart.conf
+fi
+
 if ! dpkg -l | grep -q "sudo"; then
 	apt-get install -yq sudo
 fi
@@ -23,9 +27,13 @@ if ! dpkg -l | grep -q "dirmngr"; then
 fi
 
 if ! dpkg -l | grep -q "debian-archive-keyring"; then
-	apt-get install -yq debian-archive-keyring
+	apt-get install -yq debian-archive-keyring || true
 fi
 
 if ! dpkg -l | grep -q "debconf-utils"; then
 	apt-get install -yq debconf-utils
+fi
+
+if ! dpkg -l | grep -q "wget"; then
+	apt-get install -yq wget
 fi

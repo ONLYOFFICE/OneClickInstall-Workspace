@@ -52,9 +52,14 @@ if [ "$UPDATE" = "true" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then
 fi
 
 if [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
+	CURRENT_VERSION=$(dpkg-query -W -f='${Version}' "${package_sysname}-communityserver")
+	AVAILABLE_VERSION=$(apt-cache show "${package_sysname}-communityserver" | awk '/Version:/{print $2}' | sort -V | tail -n 1)
 
 	apt-get install -o DPkg::options::="--force-confnew" -y --only-upgrade ${package_sysname}-communityserver elasticsearch=7.16.3
 	
+	if [[ "$CURRENT_VERSION" = "$AVAILABLE_VERSION" ]] && [[ "$CURRENT_MYSQL_VERSION" != "$AVAILABLE_MYSQL_VERSION" ]]; then
+		DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver
+	fi
 fi
 
 if [ "$UPDATE" = "true" ] && [ "$XMPP_SERVER_INSTALLED" = "true" ]; then

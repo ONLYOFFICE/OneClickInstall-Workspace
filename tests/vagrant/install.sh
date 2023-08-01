@@ -143,22 +143,23 @@ function prepare_vm() {
   DISTRIB_CODENAME=`echo "$DISTRIB_CODENAME" | tr '[:upper:]' '[:lower:]' | xargs`;
   REV=`echo "$REV" | xargs`;
 
-  if [ ! -f /etc/centos-release ]; then 
+  if [ ! -f /etc/centos-release ]; then
+	if [ "${DIST}" = "debian" ]; then
+	     if [ "${DISTRIB_CODENAME}" == "bookworm" ]; then
+		     apt-get update -y
+		     apt install -y curl gnupg
+             fi
+
+             apt-get remove postfix -y
+             echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
+        fi
+
 	if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
    	   mkdir -p -m 700 $HOME/.gnupg
   	   echo "deb [signed-by=/usr/share/keyrings/onlyoffice.gpg] http://static.teamlab.info.s3.amazonaws.com/repo/4testing/debian stable main" | tee /etc/apt/sources.list.d/onlyoffice4testing.list
   	   curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/onlyoffice.gpg --import
   	   chmod 644 /usr/share/keyrings/onlyoffice.gpg
 	fi
-
-	if [ "${DIST}" = "debian" ]; then
-	     apt-get remove postfix -y
-             echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
-        fi
-  fi
-
-  if cat /etc/os-release | grep xenial; then
-	curl -fsSL https://bootstrap.pypa.io/pip/3.5/get-pip.py | python3.5
   fi
 
   if [ -f /etc/centos-release ]; then
@@ -205,8 +206,10 @@ END
 function install_workspace() {
 	if [ "${DOWNLOAD_SCRIPTS}" == 'true' ]; then
             wget https://download.onlyoffice.com/install/workspace-install.sh
-        fi
-        
+  else
+    sed 's/set -e/set -xe/' -i *.sh
+  fi
+
 	printf "N\nY\nY" | bash workspace-install.sh ${ARGUMENTS}
 
 	if [[ $? != 0 ]]; then
