@@ -45,6 +45,11 @@ if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 	if [[ $REV =~ ^7.3[.0-9]*$ ]]; then
 		MONOREV=8
 		hyperfastcgi_version="0.4-7"
+
+		yum install -y rpm-sign-libs
+		if grep -q redhat_kernel_module_package /usr/lib/rpm/redhat/macros; then
+			sed -i '/redhat_kernel_module_package/d; /kernel_module_package_release/d' /usr/lib/rpm/redhat/macros
+		fi
 	fi
 	REV_PARTS=(${REV//\./ });
 	REV=${REV_PARTS[0]};
