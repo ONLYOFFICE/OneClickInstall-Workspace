@@ -143,8 +143,7 @@ module_hotfixes=true
 END
 
 # add nodejs repo
-curl -sL https://rpm.nodesource.com/setup_16.x | sed 's/centos|/'$DIST'|/g' | bash - || true
-rpm --import http://rpm.nodesource.com/pub/el/NODESOURCE-GPG-SIGNING-KEY-EL
+yum install -y https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm
 
 if ! rpm -q mysql-community-server; then
 	MYSQL_FIRST_TIME_INSTALL="true";
