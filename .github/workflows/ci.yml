@@ -1,4 +1,4 @@
-name: OneClickTests
+name: OneClickTests-Install
 
 run-name: >
   Installation test OneClickWorkspace
@@ -20,6 +20,10 @@ env:
   MAKE_RUNNER_WORKFLOW: 'NLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow'
   TESTS_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow'
   DESTROY_RUNNER_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   spin-centos7:           

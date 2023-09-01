@@ -34,9 +34,6 @@ if ! dpkg -l | grep -q "software-properties-common"; then
 fi
 
 locale-gen en_US.UTF-8
-if [ -f /etc/needrestart/needrestart.conf ]; then
-	sed -e "s_#\$nrconf{restart}_\$nrconf{restart}_" -e "s_\(\$nrconf{restart} =\).*_\1 'a';_" -i /etc/needrestart/needrestart.conf
-fi
 
 #Fix kinetic dependencies
 if [ "$DISTRIB_CODENAME" = "jammy" ] && [ $(apt-cache search "libevent-2.1-7$" | wc -l) -eq 0 ]; then
@@ -48,7 +45,8 @@ fi
 # add mono extra repo
 echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://download.mono-project.com/repo/$DIST stable-$DISTRIB_CODENAME/snapshots/6.8.0.123 main" | tee /etc/apt/sources.list.d/mono-official.list
 #Fix missing repository for $DISTRIB_CODENAME
-[[ "$DISTRIB_CODENAME" =~ ^(jammy|bullseye|bookworm)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-buster/g" /etc/apt/sources.list.d/mono-official.list
+[[ "$DISTRIB_CODENAME" =~ ^(bullseye|bookworm)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-buster/g" /etc/apt/sources.list.d/mono-official.list
+[[ "$DISTRIB_CODENAME" =~ ^(jammy)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-focal/g" /etc/apt/sources.list.d/mono-official.list
 
 gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 chmod 644 /usr/share/keyrings/mono-official-stable.gpg
@@ -84,9 +82,6 @@ fi
 #add dotnet repo
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
 	curl https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
-elif [ "$DISTRIB_CODENAME" = "bookworm" ]; then
-	#Temporary fix for missing dotnet repository for debian bookworm
-	curl https://packages.microsoft.com/config/$DIST/11/packages-microsoft-prod.deb -O
 else
 	curl https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
 fi
@@ -151,6 +146,9 @@ elif dpkg -l | grep -q "mysql-apt-config" && [ "$(apt-cache policy mysql-apt-con
 	rm -f ${MYSQL_PACKAGE_NAME}
 	apt-get -y update
 fi
+
+CURRENT_MYSQL_VERSION=$(dpkg-query -W -f='${Version}' "mysql-client" || true) 
+AVAILABLE_MYSQL_VERSION=$(apt-cache policy "mysql-client" | awk 'NR==3{print $2}')
 
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
 	apt-get install -yq mysql-server mysql-client --allow-unauthenticated
