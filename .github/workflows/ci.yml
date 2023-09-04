@@ -15,6 +15,43 @@ on:
     - cron: '00 21 * * 6'  # At 21:00 on Saturday.
 
   workflow_dispatch:
+    inputs:
+      centos7:
+        type: boolean
+        description: 'Centos7'
+        default: true
+      centos8:
+        type: boolean
+        description: 'Centos8'
+        default: true
+      centos9:
+        type: boolean
+        description: 'Centos9'
+        default: true
+      debian10:
+        type: boolean
+        description: 'debian10'
+        default: true
+      debian11:
+        type: boolean
+        description: 'debian11'
+        default: true
+      debian12:
+        type: boolean
+        description: 'debian12'
+        default: true
+      ubuntu18:
+        type: boolean
+        description: 'ubuntu18'
+        default: true
+      ubuntu20:
+        type: boolean
+        description: 'ubuntu20'
+        default: true
+      ubuntu22:
+        type: boolean
+        description: 'ubuntu22'
+        default: true
   
 env: 
   MAKE_RUNNER_WORKFLOW: 'NLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow'
@@ -28,6 +65,7 @@ concurrency:
 jobs:
   spin-centos7:           
     name: Make centos7 runner
+    if: github.event.inputs.centos7 == 'true'
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with: 
       name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }}
@@ -37,6 +75,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   spin-centos8:           
     name: Make centos8 runner
+    if: github.event.inputs.centos8 == 'true'
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with: 
       name: gha-runner-centos8-${{ github.run_id }}-${{ github.run_number }}
@@ -46,6 +85,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   spin-centos9:           
     name: Make centos9 runner
+    if: github.event.inputs.centos9 == 'true'
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with: 
       name: gha-runner-centos9-${{ github.run_id }}-${{ github.run_number }}
@@ -55,6 +95,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   spin-debian10:
     name: Make debian10 runner
+    if: github.event.inputs.debian10 == 'true'
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with:
       name: gha-runner-debian10-${{ github.run_id }}-${{ github.run_number }}
@@ -64,6 +105,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   spin-debian11: 
     name: Make debian11 runner
+    if: github.event.inputs.debian11 == 'true'
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with:
       name: gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
@@ -73,6 +115,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   spin-debian12:
     name: Make debian12 runner
+    if: github.event.inputs.debian12 == 'true'
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with:
       name: gha-runner-debian12-${{ github.run_id }}-${{ github.run_number }}
@@ -82,6 +125,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   spin-ubuntu18: 
     name: Make ubuntu18 runner
+    if: github.event.inputs.ubuntu18 == 'true'
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with:
       name: gha-runner-ubuntu18-${{ github.run_id }}-${{ github.run_number }}
@@ -91,6 +135,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   spin-ubuntu20:
     name: Make ubuntu20 runner
+    if: github.event.inputs.ubuntu20 == 'true'
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with:
       name: gha-runner-ubuntu20-${{ github.run_id }}-${{ github.run_number }}
@@ -100,6 +145,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   spin-ubuntu22:
     name: Make ubuntu22 runner
+    if: github.event.inputs.ubuntu22 == 'true'
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with:
       name: gha-runner-ubuntu22-${{ github.run_id }}-${{ github.run_number }}
@@ -170,7 +216,7 @@ jobs:
       
   destroy-centos7:
     needs: tests-centos7
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-centos-7
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with: 
@@ -180,7 +226,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}     
   destroy-centos8:
     needs: tests-centos8
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-centos-8
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with: 
@@ -190,7 +236,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-centos9:
     needs: tests-centos9
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-centos-9
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with: 
@@ -200,7 +246,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-debian10:
     needs: tests-debian10
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-debian10
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -210,7 +256,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-debian11:
     needs: tests-debian11
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-debian-11
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -220,7 +266,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-debian12:
     needs: tests-debian12
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-debian-12
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -230,7 +276,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-ubuntu18:
     needs: tests-ubuntu18
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-ubuntu-18
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -240,7 +286,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-ubuntu20:
     needs: tests-ubuntu20
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-ubuntu20
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -250,7 +296,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-ubuntu22:
     needs: tests-ubuntu22
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-ubuntu22
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
