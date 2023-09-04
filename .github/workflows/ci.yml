@@ -216,7 +216,7 @@ jobs:
       
   destroy-centos7:
     needs: tests-centos7
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-centos-7
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with: 
@@ -226,7 +226,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}     
   destroy-centos8:
     needs: tests-centos8
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-centos-8
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with: 
@@ -236,7 +236,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-centos9:
     needs: tests-centos9
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-centos-9
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with: 
@@ -246,7 +246,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-debian10:
     needs: tests-debian10
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-debian10
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -256,7 +256,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-debian11:
     needs: tests-debian11
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-debian-11
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -266,7 +266,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-debian12:
     needs: tests-debian12
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-debian-12
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -276,7 +276,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-ubuntu18:
     needs: tests-ubuntu18
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-ubuntu-18
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -286,7 +286,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-ubuntu20:
     needs: tests-ubuntu20
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-ubuntu20
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
@@ -296,7 +296,7 @@ jobs:
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
   destroy-ubuntu22:
     needs: tests-ubuntu22
-    if: always()
+    if: failure() || success() || cancelled()
     name: destroy-ubuntu22
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
     with:
