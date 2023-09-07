@@ -153,6 +153,7 @@ module_hotfixes=true
 END
 
 # add nodejs repo
+[ "$REV" = "8" ] && NODEJS_OPTION="--setopt=nodesource-nodejs.module_hotfixes=1"
 yum install -y https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm
 
 if ! rpm -q mysql-community-server; then
@@ -185,7 +186,7 @@ yum -y install epel-release \
 			make \
 			SDL2 $POWERTOOLS_REPO \
 			snapd \
-			nodejs \
+			nodejs $NODEJS_OPTION \
 			dotnet-sdk-7.0 $DOTNET_HOST
 			
 yum versionlock mono-complete
