@@ -1932,8 +1932,11 @@ get_container_env_parameter () {
 
 move_mail_server_database () {
 	EXIST_DATABASE=$(docker exec -i ${MYSQL_CONTAINER_NAME} mysql -s -N -u ${MYSQL_ROOT_USER} -p${MYSQL_ROOT_PASSWORD} -e "show databases;" 2>/dev/null | { grep -sw ${MYSQL_MAIL_DATABASE} || true; });
+	EXIST_MAIL_DATABASE=$(docker exec -itd ${MAIL_CONTAINER_NAME} mysql -s -N -u ${MYSQL_ROOT_USER} -p${MYSQL_MAIL_ROOT_PASSWORD} -e "show databases;" 2>/dev/null | { grep -sw ${MYSQL_MAIL_DATABASE} || true; })
 	if [[ -n ${EXIST_DATABASE} ]]; then
 		echo "$MYSQL_MAIL_DATABASE database already exist in $MYSQL_CONTAINER_NAME"
+	elif [[ -z "${EXIST_MAIL_DATABASE}" ]]; then
+		echo "$MYSQL_MAIL_DATABASE database does not exist in $MAIL_CONTAINER_NAME"
 	else
 		if ! docker exec -itd ${MAIL_CONTAINER_NAME} mysqladmin -u ${MYSQL_ROOT_USER} -p${MYSQL_MAIL_ROOT_PASSWORD} status; then
 			echo "$MAIL_CONTAINER_NAME mysqld service not available."
