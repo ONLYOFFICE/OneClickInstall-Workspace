@@ -1112,7 +1112,7 @@ install_mysql_server () {
 			else
 				sed -i "s/tls_version.*/tls_version = TLSv1.2/" ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			fi
-		elif [[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -ge "8000034000" ]]; then
+		elif [ "$INSTALL_MAIL_SERVER" != "true" ] && [[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -ge "8000034000" ]]; then
 			if grep -q "mysql_native_password" ${BASE_DIR}/mysql/initdb/setup.sql; then
 				sed -i 's/mysql_native_password/caching_sha2_password/g' ${BASE_DIR}/mysql/initdb/setup.sql
 			fi
@@ -1132,12 +1132,16 @@ log-error = /var/log/mysql/error.log" > ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			[[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -lt "8000000000" ]] && echo "tls_version = TLSv1.2" >> ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			chmod 0644 ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 		fi
+		
+		if [ "$INSTALL_MAIL_SERVER" = "true" ]; then
+			MYSQL_AUTHENTICATION_PLUGIN="WITH mysql_native_password"
+		fi 
 
 		if ! file_exists ${BASE_DIR}/mysql/initdb/setup.sql; then
                         echo "CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
-CREATE USER '$MYSQL_MAIL_USER'@'%' IDENTIFIED BY '$MYSQL_MAIL_ROOT_PASSWORD';
-ALTER USER 'root'@'%' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';
-ALTER USER 'root'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD';
+CREATE USER '$MYSQL_MAIL_USER'@'%' IDENTIFIED $MYSQL_AUTHENTICATION_PLUGIN BY '$MYSQL_MAIL_ROOT_PASSWORD';
+ALTER USER 'root'@'%' IDENTIFIED $MYSQL_AUTHENTICATION_PLUGIN BY '$MYSQL_ROOT_PASSWORD';
+ALTER USER 'root'@'localhost' IDENTIFIED $MYSQL_AUTHENTICATION_PLUGIN BY '$MYSQL_ROOT_PASSWORD';
 GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_ROOT_USER'@'%';
 GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_USER'@'%';
 GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_MAIL_USER'@'%';
@@ -1928,8 +1932,11 @@ get_container_env_parameter () {
 
 move_mail_server_database () {
 	EXIST_DATABASE=$(docker exec -i ${MYSQL_CONTAINER_NAME} mysql -s -N -u ${MYSQL_ROOT_USER} -p${MYSQL_ROOT_PASSWORD} -e "show databases;" 2>/dev/null | { grep -sw ${MYSQL_MAIL_DATABASE} || true; });
+	EXIST_MAIL_DATABASE=$(docker exec -itd ${MAIL_CONTAINER_NAME} mysql -s -N -u ${MYSQL_ROOT_USER} -p${MYSQL_MAIL_ROOT_PASSWORD} -e "show databases;" 2>/dev/null | { grep -sw ${MYSQL_MAIL_DATABASE} || true; })
 	if [[ -n ${EXIST_DATABASE} ]]; then
 		echo "$MYSQL_MAIL_DATABASE database already exist in $MYSQL_CONTAINER_NAME"
+	elif [[ -z "${EXIST_MAIL_DATABASE}" ]]; then
+		echo "$MYSQL_MAIL_DATABASE database does not exist in $MAIL_CONTAINER_NAME"
 	else
 		if ! docker exec -itd ${MAIL_CONTAINER_NAME} mysqladmin -u ${MYSQL_ROOT_USER} -p${MYSQL_MAIL_ROOT_PASSWORD} status; then
 			echo "$MAIL_CONTAINER_NAME mysqld service not available."
