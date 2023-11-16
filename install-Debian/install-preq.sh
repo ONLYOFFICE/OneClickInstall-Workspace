@@ -101,7 +101,6 @@ chmod 644 /usr/share/keyrings/nodesource.gpg
 
 apt-get update
 
-node_version=$(apt-cache madison nodejs | grep "| 16." | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 mono_complete_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
 #add nginx repo
@@ -183,7 +182,7 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				mono-complete=$mono_complete_version \
 				ca-certificates-mono \
 				mono-webserver-hyperfastcgi=$hyperfastcgi_version \
-				nodejs=$node_version \
+				nodejs \
 				mysql-server \
 				mysql-client \
 				htop \
