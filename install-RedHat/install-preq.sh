@@ -278,7 +278,7 @@ if ! rpm -q elasticsearch; then
 fi
 
 if ! command -v semanage &> /dev/null; then
-	yum install -y policycoreutils-python-utils
+	yum install -y policycoreutils-python || yum install -y policycoreutils-python-utils
 fi 
 
 semanage permissive -a httpd_t
