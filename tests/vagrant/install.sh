@@ -149,11 +149,13 @@ function prepare_vm() {
 		     apt-get update -y
 		     apt install -y curl gnupg
              fi
-
-             systemctl stop postfix
-	     systemctl disable postfix
-	     apt-get remove postfix -y
-             echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
+	     # Remove postfix if installed
+             if systemctl is-active --quiet postfix; then
+                     systemctl stop postfix
+	             systemctl disable postfix
+	             apt-get remove postfix -y
+                     echo "${COLOR_GREEN}☑ PREPAVE_VM: Postfix was removed${COLOR_RESET}"
+	     fi
         fi
 
 	if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
