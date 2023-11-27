@@ -119,7 +119,7 @@ jobs:
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
     with:
       name: gha-runner-debian12-${{ github.run_id }}-${{ github.run_number }}
-      label: bookworm64
+      label: debian12
     secrets:
       access-token: ${{ secrets.ACCESS_TOKEN }}
       do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
@@ -187,11 +187,10 @@ jobs:
       distr: debian11
   tests-debian12:
     needs: spin-debian12
-    name: Tests on debian12 Bookworm
+    name: Tests on debian12
     uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
     with:
-      author: debian
-      distr: bookworm64
+      distr: debian12
   tests-ubuntu18:
     needs: spin-ubuntu18
     name: Tests on ubuntu1804
