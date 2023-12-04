@@ -128,8 +128,6 @@ echo "mysql-apt-config mysql-apt-config/repo-codename  select  $DISTRIB_CODENAME
 echo "mysql-apt-config mysql-apt-config/repo-distro  select  $DIST" | debconf-set-selections
 echo "mysql-apt-config mysql-apt-config/select-server  select  mysql-8.0" | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive dpkg -i ${MYSQL_PACKAGE_NAME}
-#Temporary fix for missing mysql repository for debian bookworm
-[ "$DISTRIB_CODENAME" = "bookworm" ] && sed -i "s/$DIST/ubuntu/g; s/$DISTRIB_CODENAME/jammy/g" /etc/apt/sources.list.d/mysql.list
 rm -f ${MYSQL_PACKAGE_NAME}
 
 echo mysql-community-server mysql-community-server/root-pass password ${MYSQL_SERVER_PASS} | debconf-set-selections
