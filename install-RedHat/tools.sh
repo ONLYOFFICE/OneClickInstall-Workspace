@@ -4,7 +4,7 @@ set -e
 
 function make_swap () {
 	local DISK_REQUIREMENTS=6144; #6Gb free space
-	local MEMORY_REQUIREMENTS=11000; #RAM ~12Gb
+	local MEMORY_REQUIREMENTS=16384; #RAM ~16Gb
 
 	local AVAILABLE_DISK_SPACE=$(df -m /  | tail -1 | awk '{ print $4 }');
 	local TOTAL_MEMORY=$(free -m | grep -oP '\d+' | head -n 1);
