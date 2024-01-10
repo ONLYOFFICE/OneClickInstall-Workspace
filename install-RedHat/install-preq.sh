@@ -73,6 +73,7 @@ if [ "$REV" = "9" ]; then
 elif [ "$REV" = "8" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"};
 	[ $DIST != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
+	DOTNET_HOST="dotnet-host-7.0*"
 elif [ "$REV" = "7" ] ; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-6"};
 fi
