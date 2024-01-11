@@ -213,8 +213,6 @@ fi
 if ! dpkg -l | grep -q "elasticsearch"; then
 	apt-get install -yq elasticsearch=7.16.3
 fi
-				
-npm config set prefix '/usr/'
 
 # disable apparmor for mysql
 if which apparmor_parser && [ ! -f /etc/apparmor.d/disable/usr.sbin.mysqld ] && [ -f /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
