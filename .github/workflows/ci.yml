@@ -1,7 +1,5 @@
-name: OneClickTests-Install
-
-run-name: >
-  Installation test OneClickWorkspace
+name: >
+  Installation test OneClickInstall-Workspace
 
 on:
   pull_request:
@@ -18,288 +16,136 @@ on:
     inputs:
       centos7:
         type: boolean
-        description: 'Centos7'
+        description: 'CentOS 7'
         default: true
-      centos8:
+      centos8s:
         type: boolean
-        description: 'Centos8'
+        description: 'CentOS 8 Stream'
         default: true
-      centos9:
+      centos9s:
         type: boolean
-        description: 'Centos9'
+        description: 'CentOS 9 Stream'
         default: true
       debian10:
         type: boolean
-        description: 'debian10'
+        description: 'Debian 10'
         default: true
       debian11:
         type: boolean
-        description: 'debian11'
+        description: 'Debian 11'
         default: true
       debian12:
         type: boolean
-        description: 'debian12'
+        description: 'Debian 12'
         default: true
-      ubuntu18:
+      ubuntu1804:
         type: boolean
-        description: 'ubuntu18'
+        description: 'Ubuntu 18.04'
         default: true
-      ubuntu20:
+      ubuntu2004:
         type: boolean
-        description: 'ubuntu20'
+        description: 'Ubuntu 20.04'
         default: true
-      ubuntu22:
+      ubuntu2204:
         type: boolean
-        description: 'ubuntu22'
+        description: 'Ubuntu 22.04'
         default: true
-  
-env: 
-  MAKE_RUNNER_WORKFLOW: 'NLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow'
-  TESTS_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow'
-  DESTROY_RUNNER_WORKFLOW: 'ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
-  spin-centos7:           
-    name: Make centos7 runner
-    if: github.event.inputs.centos7 == 'true'
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
-    with: 
-      name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }}
-      label: centos7
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  spin-centos8:           
-    name: Make centos8 runner
-    if: github.event.inputs.centos8 == 'true'
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
-    with: 
-      name: gha-runner-centos8-${{ github.run_id }}-${{ github.run_number }}
-      label: centos8s
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  spin-centos9:           
-    name: Make centos9 runner
-    if: github.event.inputs.centos9 == 'true'
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
-    with: 
-      name: gha-runner-centos9-${{ github.run_id }}-${{ github.run_number }}
-      label: centos9s
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  spin-debian10:
-    name: Make debian10 runner
-    if: github.event.inputs.debian10 == 'true'
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-debian10-${{ github.run_id }}-${{ github.run_number }}
-      label: debian10
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  spin-debian11: 
-    name: Make debian11 runner
-    if: github.event.inputs.debian11 == 'true'
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
-      label: debian11
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  spin-debian12:
-    name: Make debian12 runner
-    if: github.event.inputs.debian12 == 'true'
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-debian12-${{ github.run_id }}-${{ github.run_number }}
-      label: debian12
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  spin-ubuntu18: 
-    name: Make ubuntu18 runner
-    if: github.event.inputs.ubuntu18 == 'true'
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-ubuntu18-${{ github.run_id }}-${{ github.run_number }}
-      label: ubuntu1804
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  spin-ubuntu20:
-    name: Make ubuntu20 runner
-    if: github.event.inputs.ubuntu20 == 'true'
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-ubuntu20-${{ github.run_id }}-${{ github.run_number }}
-      label: ubuntu2004
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  spin-ubuntu22:
-    name: Make ubuntu22 runner
-    if: github.event.inputs.ubuntu22 == 'true'
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-make-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-ubuntu22-${{ github.run_id }}-${{ github.run_number }}
-      label: ubuntu2204
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
 
-  #### RUN SEPARATE TESTS ####    
-  tests-centos7:
-    needs: spin-centos7       
-    name: Tests on centos7
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
-    with: 
-      distr: centos7
-  tests-centos8:
-    needs: spin-centos8       
-    name: Tests on centos8
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
-    with: 
-      distr: centos8s
-  tests-centos9:
-    needs: spin-centos9       
-    name: Tests on centos9
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
-    with: 
-      distr: centos9s
-  tests-debian10:
-    needs: spin-debian10
-    name: Tests on debian10
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
-    with:
-      distr: debian10
-  tests-debian11:
-    needs: spin-debian11
-    name: Tests on debian11
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
-    with:
-      distr: debian11
-  tests-debian12:
-    needs: spin-debian12
-    name: Tests on debian12
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
-    with:
-      distr: debian12
-  tests-ubuntu18:
-    needs: spin-ubuntu18
-    name: Tests on ubuntu1804
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
-    with:
-      distr: ubuntu1804
-  tests-ubuntu20:
-    needs: spin-ubuntu20
-    name: Tests on ubuntu2004
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
-    with:
-      distr: ubuntu2004
-  tests-ubuntu22:
-    needs: spin-ubuntu22
-    name: Tests on ubuntu2204
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-tests.yml@feature/reusable-workflow
-    with:
-      distr: ubuntu2204
+      - name: Set matrix names
+        id: set-matrix
+        run: |
+          matrix=$(echo '{
+            "include": [
+              {"execute": '${{ github.event.inputs.centos7 || true }}', "name": "CentOS7", "os": "centos7", "distr": "generic"},
+              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS8S", "os": "centos8s", "distr": "generic"},
+              {"execute": '${{ github.event.inputs.centos9s || true }}', "name": "CentOS9S", "os": "centos9s", "distr": "generic"},
+              {"execute": '${{ github.event.inputs.debian10 || true }}', "name": "Debian10", "os": "debian10", "distr": "generic"},
+              {"execute": '${{ github.event.inputs.debian11 || true }}', "name": "Debian11", "os": "debian11", "distr": "generic"},
+              {"execute": '${{ github.event.inputs.debian12 || true }}', "name": "Debian12", "os": "debian12", "distr": "generic"},
+              {"execute": '${{ github.event.inputs.ubuntu1804 || true }}', "name": "Ubuntu18.04", "os": "ubuntu1804", "distr": "generic"},
+              {"execute": '${{ github.event.inputs.ubuntu2004 || true }}', "name": "Ubuntu20.04", "os": "ubuntu2004", "distr": "generic"},
+              {"execute": '${{ github.event.inputs.ubuntu2204 || true }}', "name": "Ubuntu22.04", "os": "ubuntu2204", "distr": "generic"}
+            ]
+          }' | jq -c '{include: [.include[] | select(.execute == true)]}')
+          echo "matrix=${matrix}" >> $GITHUB_OUTPUT
 
-      
-  ### DESTROY MACHINES ###
-      
-  destroy-centos7:
-    needs: tests-centos7
-    if: failure() || success() || cancelled()
-    name: destroy-centos-7
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
-    with: 
-      name: gha-runner-centos7-${{ github.run_id }}-${{ github.run_number }}
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}     
-  destroy-centos8:
-    needs: tests-centos8
-    if: failure() || success() || cancelled()
-    name: destroy-centos-8
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
-    with: 
-      name: gha-runner-centos8-${{ github.run_id }}-${{ github.run_number }}
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  destroy-centos9:
-    needs: tests-centos9
-    if: failure() || success() || cancelled()
-    name: destroy-centos-9
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
-    with: 
-      name: gha-runner-centos9-${{ github.run_id }}-${{ github.run_number }}
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  destroy-debian10:
-    needs: tests-debian10
-    if: failure() || success() || cancelled()
-    name: destroy-debian10
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-debian10-${{ github.run_id }}-${{ github.run_number }}
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  destroy-debian11:
-    needs: tests-debian11
-    if: failure() || success() || cancelled()
-    name: destroy-debian-11
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-debian11-${{ github.run_id }}-${{ github.run_number }}
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  destroy-debian12:
-    needs: tests-debian12
-    if: failure() || success() || cancelled()
-    name: destroy-debian-12
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-debian12-${{ github.run_id }}-${{ github.run_number }}
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  destroy-ubuntu18:
-    needs: tests-ubuntu18
-    if: failure() || success() || cancelled()
-    name: destroy-ubuntu-18
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-ubuntu18-${{ github.run_id }}-${{ github.run_number }}
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  destroy-ubuntu20:
-    needs: tests-ubuntu20
-    if: failure() || success() || cancelled()
-    name: destroy-ubuntu20
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-ubuntu20-${{ github.run_id }}-${{ github.run_number }}
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
-  destroy-ubuntu22:
-    needs: tests-ubuntu22
-    if: failure() || success() || cancelled()
-    name: destroy-ubuntu22
-    uses: ONLYOFFICE/OneClickInstall-Workspace/.github/workflows/reusable-destroy-runner.yml@feature/reusable-workflow
-    with:
-      name: gha-runner-ubuntu22-${{ github.run_id }}-${{ github.run_number }}
-    secrets:
-      access-token: ${{ secrets.ACCESS_TOKEN }}
-      do-access-token: ${{ secrets.DO_ACCESS_TOKEN }}
+  vagrant-up:
+    name: "Test Workspace with ${{ matrix.name}}"
+    runs-on: ubuntu-22.04
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJSON(needs.prepare.outputs.matrix)}}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Get update and install vagrant
+        run: |
+          set -eux
+          sudo apt update -y
+          sudo apt install vagrant virtualbox -y
+
+      - name: Install from production scripts
+        if: ${{ github.event_name == 'schedule' }}
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 2
+          timeout_minutes: 180
+          retry_on: error
+          command: |
+                cd tests/vagrant
+                TEST_CASE='--production-install' \
+                DISTR='${{ matrix.distr }}' \
+                RAM='6100' \
+                CPU='2' \
+                OS='${{ matrix.os }}' \
+                DOWNLOAD_SCRIPT='-ds true' \
+                ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
+                vagrant up
+          on_retry_command: |
+                echo "RUN CLEAN UP: Destroy vagrant and one more try"
+                cd tests/vagrant
+                sleep 10
+                vagrant destroy --force
+
+      - name: Install from local scripts
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 2
+          timeout_minutes: 180
+          retry_on: error
+          command: |
+                cd tests/vagrant
+                TEST_CASE='--local-install' \
+                DISTR='${{ matrix.distr }}' \
+                RAM='6100' \
+                CPU='2' \
+                OS='${{ matrix.os }}' \
+                DOWNLOAD_SCRIPT='-ds false' \
+                TEST_REPO='-tr true' \
+                ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true'" \
+                vagrant up
+          on_retry_command: |
+                echo "RUN CLEAN UP: Destroy vagrant and one more try"
+                cd tests/vagrant
+                sleep 10
+                vagrant destroy --force
