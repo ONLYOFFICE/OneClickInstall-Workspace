@@ -23,14 +23,47 @@ defaults:
 
 jobs:
   vagrant-up:
-    name: "Rebuild box with ${{ matrix.boxes }}"
+    name: "Rebuild box with ${{ matrix.name }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        distributor: ["generic"]
-        boxes: ["centos7", "centos8s", "centos9s", "debian10", "debian11", "debian12", "ubuntu1804", "ubuntu2004", "ubuntu2204"]
-        name: ["CentOS7", "CentOS8S", "CentOS9S", "Debian10", "Debian11", "Debian12", "Ubuntu1804", "Ubuntu2004", "Ubuntu2204",]
+        include:
+          - distr: "generic"
+            boxes: "centos7"
+            name: "centos7"
+
+          - distr: "generic"
+            boxes: "centos8s"
+            name: "centos8s"
+
+          - distr: "generic"
+            boxes: "centos9s"
+            name: "centos9s"
+            
+          - distr: "generic"
+            boxes: "debian10"
+            name: "debian10"
+
+          - distr: "generic"
+            boxes: "debian11"
+            name: "debian11"
+
+          - distr: "debian"
+            boxes: "bookworm64"
+            name: "debian12"
+
+          - distr: "generic"
+            boxes: "ubuntu1804"
+            name: "ubuntu1804"
+            
+          - distr: "generic"
+            boxes: "ubuntu2004"
+            name: "ubuntu2004"
+
+          - distr: "generic"
+            boxes: "ubuntu2204"
+            name: "ubuntu2204"
 
     steps:
     - name: Checkout code
@@ -68,7 +101,7 @@ jobs:
                 export date=$(date +%F)
                 sleep 300
                    TEST_CASE='--production-install' \
-                   DISTR='${{ matrix.distributor }}' \
+                   DISTR='${{ matrix.distr }}' \
                    OS='${{ matrix.boxes }}' \
                    DOWNLOAD_SCRIPT='-ds true' \
                    RAM='9100' \
