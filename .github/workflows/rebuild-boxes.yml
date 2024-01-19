@@ -23,25 +23,68 @@ defaults:
 
 jobs:
   vagrant-up:
-    name: "Rebuild box with ${{ matrix.boxes }}"
-    runs-on: macos-12
+    name: "Rebuild box with ${{ matrix.name }}"
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        distributor: ["generic"]
-        boxes: ["centos7", "centos8s", "centos9s", "debian10", "debian11", "ubuntu1804", "ubuntu2004", "ubuntu2204"]
-        unclude:
-          - distributor: "debian"
+        include:
+          - distr: "generic"
+            boxes: "centos7"
+            name: "centos7"
+
+          - distr: "generic"
+            boxes: "centos8s"
+            name: "centos8s"
+
+          - distr: "generic"
+            boxes: "centos9s"
+            name: "centos9s"
+            
+          - distr: "generic"
+            boxes: "debian10"
+            name: "debian10"
+
+          - distr: "generic"
+            boxes: "debian11"
+            name: "debian11"
+
+          - distr: "debian"
             boxes: "bookworm64"
+            name: "debian12"
+
+          - distr: "generic"
+            boxes: "ubuntu1804"
+            name: "ubuntu1804"
+            
+          - distr: "generic"
+            boxes: "ubuntu2004"
+            name: "ubuntu2004"
+
+          - distr: "generic"
+            boxes: "ubuntu2204"
+            name: "ubuntu2204"
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Set up Python 3.
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
-    
+
+    - name: Free Disk Space
+      run: |
+        sudo rm -rf /usr/local/lib/android /opt/ghc
+        sudo docker image prune --all --force       
+
+    - name: Get update and install vagrant
+      run: |
+        set -eux
+        sudo apt update -y
+        sudo apt install vagrant virtualbox -y
+
     - name: Login Vagrant cloud
       run: vagrant cloud auth login --token ${VAGRANT_TOKEN}
 
@@ -58,7 +101,7 @@ jobs:
                 export date=$(date +%F)
                 sleep 300
                    TEST_CASE='--production-install' \
-                   DISTR='${{ matrix.distributor }}' \
+                   DISTR='${{ matrix.distr }}' \
                    OS='${{ matrix.boxes }}' \
                    DOWNLOAD_SCRIPT='-ds true' \
                    RAM='9100' \
@@ -66,10 +109,10 @@ jobs:
                    ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
                    vagrant up
                 sleep 300
-                vagrant package --output repacked_${{ matrix.boxes }}.box
+                vagrant package --output repacked_${{ matrix.name }}.box
                 vagrant cloud publish \
-                   ${VAGRANT_ACCOUNT}/${{ matrix.boxes }} \
-                   $date virtualbox repacked_${{ matrix.boxes }}.box \
+                   ${VAGRANT_ACCOUNT}/workspace-${{ matrix.name }} \
+                   $date virtualbox repacked_${{ matrix.name }}.box \
                    -d "Box with pre-installed workspace" \
                    --version-description "Workspace <version>" \
                    --release --short-description "Boxes for update testing" \
@@ -80,5 +123,5 @@ jobs:
 
                echo "RUN CLEAN UP: Remove repacked box and destroy"
                cd tests/vagrant
-               rm -rf repacked_${{ matrix.boxes }}.box
+               rm -rf repacked_${{ matrix.name }}.box
                vagrant destroy --force
