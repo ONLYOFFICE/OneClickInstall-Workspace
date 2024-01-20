@@ -67,15 +67,69 @@ jobs:
         run: |
           matrix=$(echo '{
             "include": [
-              {"execute": '${{ github.event.inputs.centos7 || true }}', "name": "CentOS7", "os": "centos7", "distr": "generic"},
-              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS8S", "os": "centos8s", "distr": "generic"},
-              {"execute": '${{ github.event.inputs.centos9s || true }}', "name": "CentOS9S", "os": "centos9s", "distr": "generic"},
-              {"execute": '${{ github.event.inputs.debian10 || true }}', "name": "Debian10", "os": "debian10", "distr": "generic"},
-              {"execute": '${{ github.event.inputs.debian11 || true }}', "name": "Debian11", "os": "debian11", "distr": "generic"},
-              {"execute": '${{ github.event.inputs.debian12 || true }}', "name": "Debian12", "os": "debian12", "distr": "generic"},
-              {"execute": '${{ github.event.inputs.ubuntu1804 || true }}', "name": "Ubuntu18.04", "os": "ubuntu1804", "distr": "generic"},
-              {"execute": '${{ github.event.inputs.ubuntu2004 || true }}', "name": "Ubuntu20.04", "os": "ubuntu2004", "distr": "generic"},
-              {"execute": '${{ github.event.inputs.ubuntu2204 || true }}', "name": "Ubuntu22.04", "os": "ubuntu2204", "distr": "generic"}
+              {
+              "execute": '${{ github.event.inputs.centos7 || true }}',
+              "name": "CentOS7",
+              "os": "centos7",
+              "distr": "generic",
+              "box-ver": "4.3.10"
+              },
+              {
+              "execute": '${{ github.event.inputs.centos8s || true }}',
+              "name": "CentOS8S",
+              "os": "centos8s",
+              "distr": "generic",
+              "box-ver": "4.3.10"
+              },
+              {
+              "execute": '${{ github.event.inputs.centos9s || true }}',
+              "name": "CentOS9S",
+              "os": "centos9s",
+              "distr": "generic",
+              "box-ver": "4.3.10"
+              },
+              {
+              "execute": '${{ github.event.inputs.debian10 || true }}',
+              "name": "Debian10",
+              "os":"debian10",
+              "distr": "generic",
+              "box-ver": "4.3.10"
+              },
+              {
+              "execute": '${{ github.event.inputs.debian11 || true }}',
+              "name": "Debian11",
+              "os": "debian11",
+              "distr": "generic",
+              "box-ver": "4.3.10"
+              },
+              {
+              "execute": '${{ github.event.inputs.debian12 || true }}',
+              "name": "Debian12",
+              "os": "debian12",
+              "distr": "generic",
+              "box-ver": "4.3.10"
+              },
+              {
+              "execute": '${{ github.event.inputs.ubuntu1804 || true }}',
+              "name": "Ubuntu18.04",
+              "os": "ubuntu1804",
+              "distr": "generic",
+              "box-ver": "4.3.10"
+              },
+              {
+              "execute": '${{ github.event.inputs.ubuntu2004 || true }}',
+              "name": "Ubuntu20.04",
+              "os": "ubuntu2004",
+              "distr": "generic",
+              "box-ver": "4.3.10"
+              },
+              {
+              "execute": '${{ github.event.inputs.ubuntu2204 || true }}',
+              "name": "Ubuntu22.04",
+              "os": "ubuntu2204",
+              "distr": "generic",
+              "box-ver": "4.3.10"
+              }
             ]
           }' | jq -c '{include: [.include[] | select(.execute == true)]}')
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
@@ -116,6 +170,7 @@ jobs:
                 DISTR='${{ matrix.distr }}' \
                 RAM='6100' \
                 CPU='2' \
+                BOX_VER='${{ matrix.box-ver }}' \
                 OS='${{ matrix.os }}' \
                 DOWNLOAD_SCRIPT='-ds true' \
                 ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
@@ -139,6 +194,7 @@ jobs:
                 DISTR='${{ matrix.distr }}' \
                 RAM='6100' \
                 CPU='2' \
+                BOX_VER='${{ matrix.box-ver }}' \
                 OS='${{ matrix.os }}' \
                 DOWNLOAD_SCRIPT='-ds false' \
                 TEST_REPO='-tr true' \
