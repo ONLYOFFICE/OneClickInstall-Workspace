@@ -98,10 +98,13 @@ jobs:
           python-version: '3.x'
 
       - name: Get update and install vagrant
+        id: prepare
         run: |
           set -eux
           sudo apt update -y
           sudo apt install vagrant virtualbox -y
+          echo "cpu=$(nproc)" >> "$GITHUB_OUTPUT"
+          echo "ram=$(free -m | awk '{ printf $7 }' | awk -v s=1500 '{ printf $1-s }')" >> "$GITHUB_OUTPUT"
 
       - name: Install from production scripts
         if: ${{ github.event_name == 'schedule' }}
@@ -114,8 +117,9 @@ jobs:
                 cd tests/vagrant
                 TEST_CASE='--production-install' \
                 DISTR='${{ matrix.distr }}' \
-                RAM='6100' \
-                CPU='2' \
+                RAM='${{ steps.prepare.outputs.ram }}' \
+                CPU='${{ steps.prepare.outputs.cpu }}' \
+                BOX_VER='${{ matrix.box-ver }}' \
                 OS='${{ matrix.os }}' \
                 DOWNLOAD_SCRIPT='-ds true' \
                 ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
@@ -137,8 +141,9 @@ jobs:
                 cd tests/vagrant
                 TEST_CASE='--local-install' \
                 DISTR='${{ matrix.distr }}' \
-                RAM='6100' \
-                CPU='2' \
+                RAM='${{ steps.prepare.outputs.ram }}' \
+                CPU='${{ steps.prepare.outputs.cpu }}' \
+                BOX_VER='${{ matrix.box-ver }}' \
                 OS='${{ matrix.os }}' \
                 DOWNLOAD_SCRIPT='-ds false' \
                 TEST_REPO='-tr true' \
