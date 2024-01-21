@@ -94,10 +94,9 @@ if [ -z $ELASTICSEARCH_REPOSITORY ]; then
 	chmod 644 /usr/share/keyrings/elastic-7.x.gpg
 	echo "deb [signed-by=/usr/share/keyrings/elastic-7.x.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-7.x.list
 fi
+
 # add nodejs repo
-curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nodesource.gpg --import
-echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
-chmod 644 /usr/share/keyrings/nodesource.gpg
+curl -fsSL https://deb.nodesource.com/setup_16.x | sed '/sleep/d' | bash -
 
 apt-get update
 
