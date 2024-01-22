@@ -112,7 +112,7 @@ jobs:
       uses: nick-fields/retry@v2
       with:
         max_attempts: 1
-        timeout_minutes: 80
+        timeout_minutes: 90
         retry_on: error
         command: |
               cd ./tests/vagrant
@@ -121,8 +121,8 @@ jobs:
               TEST_CASE='--local-install' \
               DISTR='${{matrix.distr}}' \
               RAM='6100' \
-              CPU='3' \
-              OS='workspace-${{ matrix.os }}' \
+              CPU='2' \
+              OS='${{ matrix.os }}' \
               DOWNLOAD_SCRIPT='-ds false' \
               TEST_REPO='-tr true' \
               ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true --update true'" \
