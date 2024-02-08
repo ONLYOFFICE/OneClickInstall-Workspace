@@ -4,10 +4,10 @@ set -e
 
 function make_swap () {
 	local DISK_REQUIREMENTS=6144; #6Gb free space
-	local MEMORY_REQUIREMENTS=16384; #RAM ~16Gb
+	local MEMORY_REQUIREMENTS=16000; #RAM ~16Gb
 
 	local AVAILABLE_DISK_SPACE=$(df -m /  | tail -1 | awk '{ print $4 }');
-	local TOTAL_MEMORY=$(free -m | grep -oP '\d+' | head -n 1);
+	local TOTAL_MEMORY=$(free --mega | grep -oP '\d+' | head -n 1);
 	local EXIST=$(swapon -s | awk '{ print $1 }' | { grep -x '/app_swapfile' || true; });
 
 	if [[ -z $EXIST ]] && [ ${TOTAL_MEMORY} -lt ${MEMORY_REQUIREMENTS} ] && [ ${AVAILABLE_DISK_SPACE} -gt ${DISK_REQUIREMENTS} ]; then
@@ -21,8 +21,8 @@ function make_swap () {
 
 check_hardware () {
     DISK_REQUIREMENTS=40960;
-    MEMORY_REQUIREMENTS=5500;
-    CORE_REQUIREMENTS=2;
+    MEMORY_REQUIREMENTS=8000;
+    CORE_REQUIREMENTS=4;
 
 	AVAILABLE_DISK_SPACE=$(df -m /  | tail -1 | awk '{ print $4 }');
 
@@ -31,7 +31,7 @@ check_hardware () {
 		exit 1;
 	fi
 
-	TOTAL_MEMORY=$(free -m | grep -oP '\d+' | head -n 1);
+	TOTAL_MEMORY=$(free --mega | grep -oP '\d+' | head -n 1);
 
 	if [ ${TOTAL_MEMORY} -lt ${MEMORY_REQUIREMENTS} ]; then
 		echo "Minimal requirements are not met: need at least $MEMORY_REQUIREMENTS MB of RAM"

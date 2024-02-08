@@ -12,8 +12,8 @@
 # You can contact Ascensio System SIA by email at sales@onlyoffice.com
 
 DISK_REQUIREMENTS=40960;
-MEMORY_REQUIREMENTS=5500;
-CORE_REQUIREMENTS=2;
+MEMORY_REQUIREMENTS=8000;
+CORE_REQUIREMENTS=4;
 
 PRODUCT="onlyoffice";
 BASE_DIR="/app/$PRODUCT";
@@ -722,7 +722,7 @@ check_hardware () {
 		exit 1;
 	fi
 
-	TOTAL_MEMORY=$(free -m | grep -oP '\d+' | head -n 1);
+	TOTAL_MEMORY=$(free --mega | grep -oP '\d+' | head -n 1);
 
 	if [ ${TOTAL_MEMORY} -lt ${MEMORY_REQUIREMENTS} ]; then
 		echo "Minimal requirements are not met: need at least $MEMORY_REQUIREMENTS MB of RAM"
@@ -739,10 +739,10 @@ check_hardware () {
 
 make_swap () {
 	DISK_REQUIREMENTS=6144; #6Gb free space
-	MEMORY_REQUIREMENTS=16384; #RAM ~16Gb
+	MEMORY_REQUIREMENTS=16000; #RAM ~16Gb
 
 	AVAILABLE_DISK_SPACE=$(df -m /  | tail -1 | awk '{ print $4 }');
-	TOTAL_MEMORY=$(free -m | grep -oP '\d+' | head -n 1);
+	TOTAL_MEMORY=$(free --mega | grep -oP '\d+' | head -n 1);
 	EXIST=$(swapon -s | awk '{ print $1 }' | { grep -x ${SWAPFILE} || true; });
 
 	if [[ -z $EXIST ]] && [ ${TOTAL_MEMORY} -lt ${MEMORY_REQUIREMENTS} ] && [ ${AVAILABLE_DISK_SPACE} -gt ${DISK_REQUIREMENTS} ]; then
