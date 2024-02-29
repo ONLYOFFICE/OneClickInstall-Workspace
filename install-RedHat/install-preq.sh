@@ -73,6 +73,7 @@ if [ "$REV" = "9" ]; then
 elif [ "$REV" = "8" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"};
 	[ $DIST != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
+	DOTNET_HOST="dotnet-host-7.0*"
 elif [ "$REV" = "7" ] ; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-6"};
 fi
@@ -134,7 +135,7 @@ END
 
 #add mysql repo
 [ "$REV" != "7" ] && dnf remove -y @mysql && dnf module -y reset mysql && dnf module -y disable mysql
-MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP "mysql80-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | sort | tail -n1)"
+MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP "mysql80-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | sort -n | tail -n1)"
 yum localinstall -y https://repo.mysql.com/mysql80-community-release-el${REV}-${MYSQL_REPO_VERSION}.noarch.rpm || true
 
 #add mono repo
@@ -153,7 +154,7 @@ module_hotfixes=true
 END
 
 # add nodejs repo
-yum install -y https://rpm.nodesource.com/pub_16.x/nodistro/repo/nodesource-release-nodistro-1.noarch.rpm
+curl -fsSL https://rpm.nodesource.com/setup_16.x | sed '/update -y\|sleep/d' | bash - || true
 
 if ! rpm -q mysql-community-server; then
 	MYSQL_FIRST_TIME_INSTALL="true";
@@ -185,7 +186,7 @@ yum -y install epel-release \
 			make \
 			SDL2 $POWERTOOLS_REPO \
 			snapd \
-			nodejs \
+			nodejs $NODEJS_OPTION \
 			dotnet-sdk-7.0 $DOTNET_HOST
 			
 yum versionlock mono-complete
@@ -277,7 +278,7 @@ if ! rpm -q elasticsearch; then
 fi
 
 if ! command -v semanage &> /dev/null; then
-	yum install -y policycoreutils-python-utils
+	yum install -y policycoreutils-python || yum install -y policycoreutils-python-utils
 fi 
 
 semanage permissive -a httpd_t

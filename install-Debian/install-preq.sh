@@ -94,14 +94,12 @@ if [ -z $ELASTICSEARCH_REPOSITORY ]; then
 	chmod 644 /usr/share/keyrings/elastic-7.x.gpg
 	echo "deb [signed-by=/usr/share/keyrings/elastic-7.x.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-7.x.list
 fi
+
 # add nodejs repo
-curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nodesource.gpg --import
-echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_16.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
-chmod 644 /usr/share/keyrings/nodesource.gpg
+curl -fsSL https://deb.nodesource.com/setup_16.x | sed '/sleep/d' | bash -
 
 apt-get update
 
-node_version=$(apt-cache madison nodejs | grep "| 16." | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 mono_complete_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
 #add nginx repo
@@ -129,8 +127,6 @@ echo "mysql-apt-config mysql-apt-config/repo-codename  select  $DISTRIB_CODENAME
 echo "mysql-apt-config mysql-apt-config/repo-distro  select  $DIST" | debconf-set-selections
 echo "mysql-apt-config mysql-apt-config/select-server  select  mysql-8.0" | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive dpkg -i ${MYSQL_PACKAGE_NAME}
-#Temporary fix for missing mysql repository for debian bookworm
-[ "$DISTRIB_CODENAME" = "bookworm" ] && sed -i "s/$DIST/ubuntu/g; s/$DISTRIB_CODENAME/jammy/g" /etc/apt/sources.list.d/mysql.list
 rm -f ${MYSQL_PACKAGE_NAME}
 
 echo mysql-community-server mysql-community-server/root-pass password ${MYSQL_SERVER_PASS} | debconf-set-selections
@@ -183,7 +179,7 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				mono-complete=$mono_complete_version \
 				ca-certificates-mono \
 				mono-webserver-hyperfastcgi=$hyperfastcgi_version \
-				nodejs=$node_version \
+				nodejs \
 				mysql-server \
 				mysql-client \
 				htop \
@@ -216,8 +212,6 @@ fi
 if ! dpkg -l | grep -q "elasticsearch"; then
 	apt-get install -yq elasticsearch=7.16.3
 fi
-				
-npm config set prefix '/usr/'
 
 # disable apparmor for mysql
 if which apparmor_parser && [ ! -f /etc/apparmor.d/disable/usr.sbin.mysqld ] && [ -f /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
