@@ -82,11 +82,13 @@ fi
 #add dotnet repo
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
 	curl https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
-else
+elif [ "$DIST" = "debian" ] || [[ "$DISTRIB_CODENAME" =~ ^(bionic|focal)$ ]]; then
 	curl https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
+	echo -e "Package: *\nPin: origin \"packages.microsoft.com\"\nPin-Priority: 1002" | tee /etc/apt/preferences.d/99microsoft-prod.pref
+	dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
+elif dpkg -l | grep -q packages-microsoft-prod; then
+    apt-get purge -y packages-microsoft-prod
 fi
-echo -e "Package: *\nPin: origin \"packages.microsoft.com\"\nPin-Priority: 1002" | tee /etc/apt/preferences.d/99microsoft-prod.pref
-dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
 
 if [ -z $ELASTICSEARCH_REPOSITORY ]; then
 	# add elasticsearch repo
