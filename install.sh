@@ -2285,7 +2285,7 @@ start_installation () {
 
 	if [ "$UPDATE" != "true" ]; then
 		check_ports
-		MYSQL_VERSION="8.3.0";
+		MYSQL_VERSION="8.0.29";
 
 		if [ "$INSTALL_MAIL_SERVER" == "true" ]; then
 			if [[ -z ${MAIL_DOMAIN_NAME} ]]; then

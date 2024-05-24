@@ -143,14 +143,6 @@ elif dpkg -l | grep -q "mysql-apt-config" && [ "$(apt-cache policy mysql-apt-con
 	apt-get -y update
 fi
 
-if ! grep -q "mysql-innovation" /etc/apt/sources.list.d/mysql.list; then
-	echo "deb [signed-by=/usr/share/keyrings/mysql-apt-config.gpg] http://repo.mysql.com/apt/${DIST} ${DISTRIB_CODENAME} mysql-innovation" | sudo tee -a /etc/apt/sources.list.d/mysql.list
-
-	if apt-get -y update 2>&1 | grep -q "^W: .*mysql-innovation"; then
-		sudo sed -i '/mysql-innovation/d' /etc/apt/sources.list.d/mysql.list
-	fi
-fi
-
 CURRENT_MYSQL_VERSION=$(dpkg-query -W -f='${Version}' "mysql-client" || true) 
 AVAILABLE_MYSQL_VERSION=$(apt-cache policy "mysql-client" | awk 'NR==3{print $2}')
 
