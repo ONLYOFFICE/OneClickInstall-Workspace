@@ -10,7 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 # You can contact Ascensio System SIA by email at sales@onlyoffice.com
-
+ 
 DISK_REQUIREMENTS=40960;
 MEMORY_REQUIREMENTS=8000;
 CORE_REQUIREMENTS=4;
