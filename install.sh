@@ -102,6 +102,7 @@ SKIP_VERSION_CHECK="false";
 SKIP_DOMAIN_CHECK="false";
 
 COMMUNITY_PORT=80;
+COMMUNITY_SECURE_PORT=443;
 
 while [ "$1" != "" ]; do
 	case $1 in
@@ -386,6 +387,13 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
+		-csp | --communitysecureport )
+			if [ "$2" != "" ]; then
+				COMMUNITY_SECURE_PORT=$2
+				shift
+			fi
+		;;	
+
 		-mk | --machinekey )
 			if [ "$2" != "" ]; then
 				CORE_MACHINEKEY=$2
@@ -449,6 +457,13 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
+		-bd | --basedir )
+			if [ "$2" != "" ]; then
+				BASE_DIR=$2
+				shift
+			fi
+		;;
+		
 		-? | -h | --help )
 			echo "  Usage: bash $HELP_TARGET [PARAMETER] [[PARAMETER], ...]"
 			echo
@@ -497,10 +512,12 @@ while [ "$1" != "" ]; do
 			echo "      -skipvc, --skipversioncheck       skip version check while update (true|false)"
 			echo "      -skipdc, --skipdomaincheck        skip domain check when installing mail server (true|false)"
 			echo "      -cp, --communityport              community port (default value 80)"
+			echo "      -csp, --communitysecureport       community secure port (default value 443)"
 			echo "      -mk, --machinekey                 setting for core.machinekey"
 			echo "      -je, --jwtenabled                 specifies the enabling the JWT validation (true|false)"
 			echo "      -jh, --jwtheader                  defines the http header that will be used to send the JWT"
 			echo "      -js, --jwtsecret                  defines the secret key to validate the JWT in the request"
+			echo "		-bd, --basedir					  specifies the base directory"
 			echo "      -?, -h, --help                    this help"
 			echo
 			echo "  Examples"
@@ -761,7 +778,7 @@ make_swap () {
 }
 
 check_ports () {
-	RESERVED_PORTS=(443 5222 25 143 587 4190 8081 3306);
+	RESERVED_PORTS=(5222 25 143 587 4190 8081 3306);
 	ARRAY_PORTS=();
 	USED_PORTS="";
 
@@ -782,11 +799,25 @@ check_ports () {
 		exit 1;
 	fi
 
+	if [ "${COMMUNITY_SECURE_PORT//[0-9]}" = "" ]; then
+		for RESERVED_PORT in "${RESERVED_PORTS[@]}"
+		do
+			if [ "$RESERVED_PORT" -eq "$COMMUNITY_SECURE_PORT" ] ; then
+				echo "Community secure port $COMMUNITY_SECURE_PORT is reserved. Select another port"
+				exit 1;
+			fi
+		done
+	else
+		echo "Invalid community secure port $COMMUNITY_SECURE_PORT"
+		exit 1;
+	fi
+
+
 	if [ "$INSTALL_COMMUNITY_SERVER" == "true" ]; then
-		ARRAY_PORTS=(${ARRAY_PORTS[@]} "$COMMUNITY_PORT" "443" "5222");
+		ARRAY_PORTS=(${ARRAY_PORTS[@]} "$COMMUNITY_PORT" "$COMMUNITY_SECURE_PORT" "5222");
 	elif [ "$INSTALL_DOCUMENT_SERVER" == "true" ]; then
 		if [ "${USE_AS_EXTERNAL_SERVER}" == "true" ]; then
-			ARRAY_PORTS=(${ARRAY_PORTS[@]} "$COMMUNITY_PORT" "443");
+			ARRAY_PORTS=(${ARRAY_PORTS[@]} "$COMMUNITY_PORT" "$COMMUNITY_SECURE_PORT");
 		fi
 	fi
 
@@ -1561,7 +1592,7 @@ install_community_server () {
 		args=();
 		args+=(--name "$COMMUNITY_CONTAINER_NAME");
 		args+=(-p "$COMMUNITY_PORT:80");
-		args+=(-p 443:443);
+		args+=(-p "$COMMUNITY_SECURE_PORT:443");
 		args+=(-p 5222:5222);
 		args+=(--cgroupns host);
 
