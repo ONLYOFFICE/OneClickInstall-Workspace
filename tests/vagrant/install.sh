@@ -167,6 +167,14 @@ function prepare_vm() {
   fi
 
   if [ -f /etc/centos-release ]; then
+	  local REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g')
+	  if [[ "${REV}" =~ ^9 ]]; then
+		  update-crypto-policies --set LEGACY
+		  echo "${COLOR_GREEN}☑ PREPAVE_VM: sha1 gpg key chek enabled${COLOR_RESET}"
+	  else
+		  sudo sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-*
+	  fi
+
 	  if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
 	  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
 [onlyoffice4testing]
@@ -177,12 +185,6 @@ gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
 enabled=1
 END
           yum -y install centos*-release
-	  fi
-
-	  local REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g')
-	  if [[ "${REV}" =~ ^9 ]]; then
-		  update-crypto-policies --set LEGACY
-		  echo "${COLOR_GREEN}☑ PREPAVE_VM: sha1 gpg key chek enabled${COLOR_RESET}"
 	  fi
   fi
 
