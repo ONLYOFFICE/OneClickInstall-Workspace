@@ -77,9 +77,9 @@ jobs:
               {
               "execute": '${{ github.event.inputs.centos8s || true }}',
               "name": "CentOS8S",
-              "os": "centosstream-8",
-              "distr": "twistedbytes",
-              "box-ver": "2024.07.03.01"
+              "os": "centos8s",
+              "distr": "generic",
+              "box-ver": "4.3.10"
               },
               {
               "execute": '${{ github.event.inputs.centos9s || true }}',
