@@ -70,6 +70,7 @@ if [ "$REV" = "9" ]; then
 	MONOREV="8"
 	[ $DIST != "redhat" ] && TESTING_REPO="--enablerepo=crb" || /usr/bin/crb enable
 	update-crypto-policies --set DEFAULT:SHA1
+	yum -y install xorg-x11-font-utils
 elif [ "$REV" = "8" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"};
 	[ $DIST != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
