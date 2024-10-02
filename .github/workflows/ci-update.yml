@@ -81,7 +81,7 @@ jobs:
 
   update-test:
     name: "Update test on ${{ matrix.name }}"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
     needs: prepare
     strategy:
@@ -105,6 +105,8 @@ jobs:
     - name: Get update and install vagrant
       run: |
         set -eux
+        sudo wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        sudo echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
         sudo apt update -y
         sudo apt install vagrant virtualbox -y
 
