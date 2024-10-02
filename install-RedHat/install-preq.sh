@@ -234,7 +234,7 @@ if ! command -v certbot &> /dev/null; then
 fi
 
 if ! command -v god &> /dev/null; then
-	gem install --bindir /usr/bin resurrected_god --no-document
+	gem install --bindir /usr/bin $(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"') --no-document
 fi
 
 if rpm -q ffmpeg2; then
