@@ -185,7 +185,7 @@ if apt-get install --dry-run ruby-god 2>/dev/null; then
 	apt-get install -yq ruby-god ruby-dev
 else
 	command_exists ruby || apt-get install -yq build-essential libssl-dev libreadline-dev zlib1g-dev ruby-full
-	command_exists god || gem install --bindir /usr/bin god --no-document
+	command_exists god || gem install --bindir /usr/bin resurrected_god --no-document
 fi
 
 # install
