@@ -46,13 +46,13 @@ fi
 echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://download.mono-project.com/repo/$DIST stable-$DISTRIB_CODENAME/snapshots/6.8.0.123 main" | tee /etc/apt/sources.list.d/mono-official.list
 #Fix missing repository for $DISTRIB_CODENAME
 [[ "$DISTRIB_CODENAME" =~ ^(bullseye|bookworm)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-buster/g" /etc/apt/sources.list.d/mono-official.list
-[[ "$DISTRIB_CODENAME" =~ ^(jammy)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-focal/g" /etc/apt/sources.list.d/mono-official.list
+[[ "$DISTRIB_CODENAME" =~ ^(jammy|noble)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-focal/g" /etc/apt/sources.list.d/mono-official.list
 
 gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 chmod 644 /usr/share/keyrings/mono-official-stable.gpg
 mono_complete_package_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
-if [[ "$DISTRIB_CODENAME" =~ ^(focal|bullseye|jammy|bookworm)$ ]]; then
+if [[ "$DISTRIB_CODENAME" =~ ^(focal|bullseye|jammy|bookworm|noble)$ ]]; then
 	echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu focal main" | tee /etc/apt/sources.list.d/mono-extra.list  
 	hyperfastcgi_version="0.4-8"
 elif [[ "$DISTRIB_CODENAME" =~ ^(bionic|buster)$ ]]; then
@@ -68,7 +68,8 @@ curl -fsSL https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key | gpg --no-d
 chmod 644 /usr/share/keyrings/mono-extra.gpg
 
 if [ "$DIST" = "ubuntu" ]; then	
-	# add redis repo
+	# add redis repo  --- temporary fix for complete installation on Ubuntu 24.04. REDIS_DIST_CODENAME change to DISTRIB_CODENAME
+	[[ "$DISTRIB_CODENAME" =~ noble ]] && REDIS_DIST_CODENAME="jammy" || REDIS_DIST_CODENAME="${DISTRIB_CODENAME}"
 	curl -fsSL https://packages.redis.io/gpg | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/redis.gpg --import
 	echo "deb [signed-by=/usr/share/keyrings/redis.gpg] https://packages.redis.io/deb $DISTRIB_CODENAME main" | tee /etc/apt/sources.list.d/redis.list
 	chmod 644 /usr/share/keyrings/redis.gpg
@@ -82,11 +83,18 @@ fi
 #add dotnet repo
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
 	curl https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
-else
+elif [ "$DIST" = "ubuntu" ] && [ "$DISTRIB_CODENAME" = "noble" ]; then
+	add-apt-repository -y ppa:dotnet/backports
+elif [ "$DIST" = "debian" ] || [[ "$DISTRIB_CODENAME" =~ ^(bionic|focal)$ ]]; then
 	curl https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
+elif dpkg -l | grep -q packages-microsoft-prod; then
+    apt-get purge -y packages-microsoft-prod
 fi
-echo -e "Package: *\nPin: origin \"packages.microsoft.com\"\nPin-Priority: 1002" | tee /etc/apt/preferences.d/99microsoft-prod.pref
-dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
+
+if [ -f "packages-microsoft-prod.deb" ]; then
+	echo -e "Package: *\nPin: origin \"packages.microsoft.com\"\nPin-Priority: 1002" | tee /etc/apt/preferences.d/99microsoft-prod.pref
+	dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
+fi
 
 if [ -z $ELASTICSEARCH_REPOSITORY ]; then
 	# add elasticsearch repo
@@ -103,11 +111,13 @@ apt-get update
 mono_complete_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
 #add nginx repo
-curl -s http://nginx.org/keys/nginx_signing.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nginx.gpg --import
-chmod 644 /usr/share/keyrings/nginx.gpg
-echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/$DIST/ $DISTRIB_CODENAME nginx" | tee /etc/apt/sources.list.d/nginx.list
-#Temporary fix for missing nginx repository for debian bookworm
-[ "$DISTRIB_CODENAME" = "bookworm" ] && sed -i "s/$DISTRIB_CODENAME/buster/g" /etc/apt/sources.list.d/nginx.list
+if [[ "$DISTRIB_CODENAME" != noble ]]; then
+	curl -s http://nginx.org/keys/nginx_signing.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nginx.gpg --import
+	chmod 644 /usr/share/keyrings/nginx.gpg
+	echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/$DIST/ $DISTRIB_CODENAME nginx" | tee /etc/apt/sources.list.d/nginx.list
+	#Temporary fix for missing nginx repository for debian bookworm
+	[ "$DISTRIB_CODENAME" = "bookworm" ] && sed -i "s/$DISTRIB_CODENAME/buster/g" /etc/apt/sources.list.d/nginx.list
+fi
 
 # setup msttcorefonts
 echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
@@ -151,7 +161,7 @@ if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
 fi
 
 # add certbot repo
-if [ "$DIST" = "ubuntu" ] && [[ "$DISTRIB_CODENAME" = "focal" || "$DISTRIB_CODENAME" = "jammy" ]]; then
+if [ "$DIST" = "ubuntu" ] && [[ "$DISTRIB_CODENAME" =~ ^(focal|jammy|noble)$ ]]; then
 	if ! command_exists snap; then
 		apt-get -y install snapd
 	fi
@@ -171,11 +181,16 @@ elif [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "jessie" ]; then # Debian
 	apt-get install -yq deb-multimedia-keyring		
 fi
 
+if apt-get install --dry-run ruby-god 2>/dev/null; then
+	apt-get install -yq ruby-god ruby-dev
+else
+	command_exists ruby || apt-get install -yq build-essential libssl-dev libreadline-dev zlib1g-dev ruby-full
+	command_exists god || gem install --bindir /usr/bin $(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"') --no-document
+fi
+
 # install
 apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				cron \
-				ruby-dev \
-				ruby-god \
 				mono-complete=$mono_complete_version \
 				ca-certificates-mono \
 				mono-webserver-hyperfastcgi=$hyperfastcgi_version \

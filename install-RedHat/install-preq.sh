@@ -70,6 +70,7 @@ if [ "$REV" = "9" ]; then
 	MONOREV="8"
 	[ $DIST != "redhat" ] && TESTING_REPO="--enablerepo=crb" || /usr/bin/crb enable
 	update-crypto-policies --set DEFAULT:SHA1
+	yum -y install xorg-x11-font-utils
 elif [ "$REV" = "8" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"};
 	[ $DIST != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
@@ -233,7 +234,7 @@ if ! command -v certbot &> /dev/null; then
 fi
 
 if ! command -v god &> /dev/null; then
-	gem install --bindir /usr/bin god --no-document
+	gem install --bindir /usr/bin $(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"') --no-document
 fi
 
 if rpm -q ffmpeg2; then
