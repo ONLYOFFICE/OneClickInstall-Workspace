@@ -2315,6 +2315,8 @@ start_installation () {
 				check_vsyscall
 			fi
 		fi
+	elif [[ -z $(get_container_id "$MAIL_CONTAINER_NAME") ]]; then
+		INSTALL_MAIL_SERVER="false";
 	fi
 
 	if [ "$MAKESWAP" == "true" ]; then
