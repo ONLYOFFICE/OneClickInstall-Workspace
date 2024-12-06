@@ -37,7 +37,7 @@ jobs:
         python-version: '3.x'
 
     - name: Show Vagrant version
-      run: vagrant --version
+      run:  echo "Print machine ip" && ip a && vagrant --version
 
     - name: Install from production scripts
       if: ${{ github.event_name == 'schedule' }}
