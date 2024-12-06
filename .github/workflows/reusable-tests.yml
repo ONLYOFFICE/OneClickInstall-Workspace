@@ -1,5 +1,6 @@
 name: Scripts test
 
+
 on:
   workflow_call:
     inputs:
