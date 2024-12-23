@@ -78,7 +78,7 @@ while [ "$1" != "" ]; do
 done
 
 if [ -z "${INSTALLATION_TYPE}" ]; then
-   INSTALLATION_TYPE="WORKSPACE_ENTERPRISE";
+   INSTALLATION_TYPE=${INSTALLATION_TYPE:-"WORKSPACE_ENTERPRISE"}
 fi
 
 if [ -z "${UPDATE}" ]; then

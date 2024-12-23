@@ -50,6 +50,10 @@ on:
         type: boolean
         description: 'Ubuntu 22.04'
         default: true
+      ubuntu2404:
+        type: boolean
+        description: 'Ubuntu 24.04'
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -129,6 +133,13 @@ jobs:
               "os": "ubuntu2204",
               "distr": "generic",
               "box-ver": "4.3.10"
+              },
+              {
+              "execute": '${{ github.event.inputs.ubuntu2404 || true }}',
+              "name": "Ubuntu24.04",
+              "os": "ubuntu-24.04",
+              "distr": "bento",
+              "box-ver": "202404.26.0"
               }
             ]
           }' | jq -c '{include: [.include[] | select(.execute == true)]}')
