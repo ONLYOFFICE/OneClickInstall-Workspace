@@ -259,6 +259,9 @@ fi
 
 postgresql-setup initdb	|| true
 
+sed -E -i "s/(host\s+(all|replication)\s+all\s+(127\.0\.0\.1\/32|\:\:1\/128)\s+)(ident|trust|md5)/\1scram-sha-256/" /var/lib/pgsql/data/pg_hba.conf
+sed -i "s/^#\?password_encryption = .*/password_encryption = 'scram-sha-256'/" /var/lib/pgsql/data/postgresql.conf
+
 if [ -z $ELASTICSEARCH_REPOSITORY ]; then
 	rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
 
