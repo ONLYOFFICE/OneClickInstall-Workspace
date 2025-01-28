@@ -207,7 +207,7 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				python3-pip \
 				nginx-extras \
 				expect \
-				dotnet-sdk-7.0
+				dotnet-sdk-8.0
 
 if apt-cache search --names-only '^ffmpeg$' | grep -q "ffmpeg"; then
 	apt-get install -yq ffmpeg
