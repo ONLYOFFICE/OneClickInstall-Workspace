@@ -233,3 +233,5 @@ if which apparmor_parser && [ ! -f /etc/apparmor.d/disable/usr.sbin.mysqld ] && 
 	ln -sf /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/;
 	apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld;
 fi
+
+hold_package_version
