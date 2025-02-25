@@ -1,0 +1,72 @@
+name: Install Workspace Docker
+
+on:
+  schedule:
+    - cron: '00 21 * * 0'
+  push:
+    branches:
+      - 'hotfix/**'
+      - 'release/**'
+      - 'develop'
+      - 'master'
+    paths:
+      - '.github/workflows/ci-docker-install.yml'
+      - 'install.sh'
+  workflow_dispatch:
+
+jobs:
+  Install-Workspace-Docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Free Disk Space
+        run: |
+          sudo docker image prune --all --force
+
+      - name: Decode and Docker login
+        id: decode
+        run: |
+          set +x
+          IFS=':' read -r USERNAME PASSWORD <<< "$(echo "${{ secrets.DOCKER_AUTH_KEY }}" | base64 -d)"
+          echo "::add-mask::$USERNAME" && echo "::add-mask::$PASSWORD"
+          { echo "username=$USERNAME"; echo "password=$PASSWORD"; } | tee -a $GITHUB_OUTPUT
+          echo "$PASSWORD" | docker login --username "$USERNAME" --password-stdin
+
+      - name: Test Workspace Docker scripts
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            sudo bash -x install.sh -skiphc true -ims false </dev/null || exit $?
+          else
+            sudo bash -x install.sh -skiphc true -ims false -un ${{ steps.decode.outputs.username }} -p ${{ steps.decode.outputs.password }} \
+              -ci onlyoffice/4testing-communityserver -cpi onlyoffice/4testing-controlpanel -di onlyoffice/4testing-documentserver </dev/null || exit $?
+          fi
+          echo -n "Waiting for all containers to start..."
+          timeout 300 bash -c 'while docker ps | grep -q "starting"; do sleep 5; done' && echo "OK" || echo "container_status=timeout" >> $GITHUB_ENV
+
+      - name: Check container status
+        run: |
+          error=0
+          containers=$(docker ps --all --format "{{.Names}}" | grep -v '^$' || true)
+          for container in $containers; do
+            status=$(docker inspect --format="{{.State.Status}}" "$container")
+            [[ "$status" = "running" ]] && color="\033[0;32m" || { color="\033[0;31m"; error=1; }
+            printf "%-50s ${color}%s\033[0m\n" "$container" "$status"
+          done
+          [ "$error" -eq 0 ] || { echo "Timeout. Some containers failed."; exit 1; }
+
+      - name: Print logs for crashed containers
+        if: failure()
+        run: |
+          docker ps --all --format "{{.Names}}" | while read container; do
+            if [ "$(docker inspect --format="{{.State.Status}}" $container)" != "running" ]; then
+              echo "Logs for container $container:"
+              docker logs --tail 30 $container | sed "s/^/\t/"
+            fi
+          done
+          [[ "${{ env.container_status }}" == "timeout" ]] && echo "Timeout. Some containers failed." && exit 1
+
