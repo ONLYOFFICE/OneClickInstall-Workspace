@@ -58,13 +58,13 @@ jobs:
         run: |
           matrix=$(echo '{
             "include": [
-              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS8S", "os": "centos8s", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.centos9s || true }}', "name": "CentOS9S", "os": "centos9s", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.debian10 || true }}', "name": "Debian10", "os": "debian10", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.debian11 || true }}', "name": "Debian11", "os": "debian11", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.debian12 || true }}', "name": "Debian12", "os": "debian12", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.ubuntu2004 || true }}', "name": "Ubuntu20.04", "os": "ubuntu2004", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.ubuntu2204 || true }}', "name": "Ubuntu22.04", "os": "ubuntu2204", "distr": "onlyoffice"}
+              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS8S", "os": "workspace-centos8s", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.centos9s || true }}', "name": "CentOS9S", "os": "workspace-centos9s", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.debian10 || true }}', "name": "Debian10", "os": "workspace-debian10", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.debian11 || true }}', "name": "Debian11", "os": "workspace-debian11", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.debian12 || true }}', "name": "Debian12", "os": "workspace-debian12", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.ubuntu2004 || true }}', "name": "Ubuntu20.04", "os": "workspace-ubuntu2004", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.ubuntu2204 || true }}', "name": "Ubuntu22.04", "os": "workspace-ubuntu2204", "distr": "onlyoffice"}
             ]
           }' | jq -c '{include: [.include[] | select(.execute == true)]}')
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT

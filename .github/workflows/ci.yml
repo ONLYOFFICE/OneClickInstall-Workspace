@@ -66,58 +66,50 @@ jobs:
               {
               "execute": '${{ github.event.inputs.centos8s || true }}',
               "name": "CentOS8S",
-              "os": "centos8s",
-              "distr": "generic",
-              "box-ver": "4.3.10"
+              "os": "base-centos8s",
+              "distr": "onlyoffice"
               },
               {
               "execute": '${{ github.event.inputs.centos9s || true }}',
               "name": "CentOS9S",
-              "os": "centos9s",
-              "distr": "generic",
-              "box-ver": "4.3.10"
+              "os": "base-centos9s",
+              "distr": "onlyoffice"
               },
               {
               "execute": '${{ github.event.inputs.debian10 || true }}',
               "name": "Debian10",
-              "os":"debian10",
-              "distr": "generic",
-              "box-ver": "4.3.10"
+              "os":"base-debian10",
+              "distr": "onlyoffice"
               },
               {
               "execute": '${{ github.event.inputs.debian11 || true }}',
               "name": "Debian11",
-              "os": "debian11",
-              "distr": "generic",
-              "box-ver": "4.3.10"
+              "os": "base-debian11",
+              "distr": "onlyoffice"
               },
               {
               "execute": '${{ github.event.inputs.debian12 || true }}',
               "name": "Debian12",
-              "os": "debian12",
-              "distr": "generic",
-              "box-ver": "4.3.10"
+              "os": "base-debian12",
+              "distr": "onlyoffice"
               },
               {
               "execute": '${{ github.event.inputs.ubuntu2004 || true }}',
               "name": "Ubuntu20.04",
-              "os": "ubuntu2004",
-              "distr": "generic",
-              "box-ver": "4.3.10"
+              "os": "base-ubuntu2004",
+              "distr": "onlyoffice"
               },
               {
               "execute": '${{ github.event.inputs.ubuntu2204 || true }}',
               "name": "Ubuntu22.04",
-              "os": "ubuntu2204",
-              "distr": "generic",
-              "box-ver": "4.3.10"
+              "os": "base-ubuntu2204",
+              "distr": "onlyoffice"
               },
               {
               "execute": '${{ github.event.inputs.ubuntu2404 || true }}',
               "name": "Ubuntu24.04",
-              "os": "ubuntu-24.04",
-              "distr": "bento",
-              "box-ver": "202404.26.0"
+              "os": "base-ubuntu2404",
+              "distr": "onlyoffice"
               }
             ]
           }' | jq -c '{include: [.include[] | select(.execute == true)]}')
