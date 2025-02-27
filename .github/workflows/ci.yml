@@ -175,7 +175,7 @@ jobs:
           sudo apt install vagrant virtualbox -y
 
       - name: Install from production scripts
-        if: ${{ github.event_name == 'schedule' }}
+        # if: ${{ github.event_name == 'schedule' }}
         uses: nick-fields/retry@v2
         with:
           max_attempts: 2
