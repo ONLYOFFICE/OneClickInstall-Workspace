@@ -60,10 +60,9 @@ if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
 	DOTNET_HOST="dotnet-host-7.0*"
 fi
 
-#Add repositories: EPEL, REMI and RPMFUSION
-rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-$REV.noarch.rpm || true
-rpm -ivh http://rpms.remirepo.net/enterprise/remi-release-$REV.rpm || true
-yum localinstall -y --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$REV.noarch.rpm
+#Add EPEL and RPMFusion repository
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$REV.noarch.rpm || true
+yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$REV.noarch.rpm || true
 
 if [ "$REV" = "9" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"};
@@ -175,7 +174,7 @@ yum -y install epel-release \
 			postgresql \
 			postgresql-server \
 			rabbitmq-server \
-			redis --enablerepo=remi \
+			redis \
 			mysql-community-server \
 			mysql-community-client \
 			mono-webserver-hyperfastcgi-$hyperfastcgi_version \
