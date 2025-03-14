@@ -185,16 +185,19 @@ yum -y install epel-release \
 			gcc \
 			make \
 			SDL2 $POWERTOOLS_REPO \
-			snapd \
 			nodejs $NODEJS_OPTION \
 			dotnet-sdk-7.0 $DOTNET_HOST
 			
 yum versionlock mono-complete
 
-systemctl enable --now snapd.socket
-ln -fs /var/lib/snapd/snap /snap
-systemctl start --now snapd.socket
-snap wait system seed
+yum install -y snapd || true
+command -v certbot &>/dev/null || {
+    systemctl enable --now snapd.socket
+    ln -fs /var/lib/snapd/snap /snap
+    [ "$REV" = "8" ] && systemctl enable --now snapd.service && sleep 10
+    snap wait system seed && snap install --classic certbot || yum install -y certbot
+    [ ! -x /usr/bin/certbot ] && ln -s /snap/bin/certbot /usr/bin/certbot
+}
 
 #Fixing permissions selinux to install certbot
 cat << EOF > snap_permissions.te
@@ -225,12 +228,6 @@ EOF
 checkmodule -M -m -o snap_permissions.mod snap_permissions.te && rm snap_permissions.te
 semodule_package -o snap_permissions.pp -m snap_permissions.mod && rm snap_permissions.mod
 semodule -i snap_permissions.pp && rm snap_permissions.pp
-
-snap install --classic certbot
-
-if ! command -v certbot &> /dev/null; then
-	ln -s /snap/bin/certbot /usr/bin/certbot
-fi
 
 if ! command -v god &> /dev/null; then
 	gem install --bindir /usr/bin $(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"') --no-document
