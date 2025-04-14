@@ -211,7 +211,7 @@ END
 #############################################################################################
 function install_workspace() {
 	if [ "${DOWNLOAD_SCRIPTS}" == 'true' ]; then
-            wget https://download.onlyoffice.com/install/workspace-install.sh
+      curl -fLO https://download.onlyoffice.com/install/workspace-install.sh
   else
     sed 's/set -e/set -xe/' -i *.sh
   fi
