@@ -63,6 +63,11 @@ fi
 yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$REV.noarch.rpm || true
 yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$REV.noarch.rpm || true
 
+if [[ "$DIST" == "redhat" && "$REV" -ge 9 ]]; then 
+    LADSPA_PACKAGE_VERSION=$(curl -s "https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/Packages/l/" | grep -oP 'ladspa-[0-9].*?\.rpm' | sort -V | tail -n 1)
+    ${package_manager} install -y "https://dl.fedoraproject.org/pub/epel/10/Everything/x86_64/Packages/l/${LADSPA_PACKAGE_VERSION}"
+fi
+
 if [ "$REV" = "10" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"};
 	REV="9" && MONOREV="8"
