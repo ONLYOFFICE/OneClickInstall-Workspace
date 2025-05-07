@@ -143,7 +143,7 @@ function prepare_vm() {
   DISTRIB_CODENAME=`echo "$DISTRIB_CODENAME" | tr '[:upper:]' '[:lower:]' | xargs`;
   REV=`echo "$REV" | xargs`;
 
-  if [ ! -f /etc/centos-release ]; then
+  if grep -qi 'debian\|ubuntu' /etc/os-release; then
 	if [ "${DIST}" = "debian" ]; then
 	     if [ "${DISTRIB_CODENAME}" == "bookworm" ]; then
 		     apt-get update -y
@@ -166,15 +166,29 @@ function prepare_vm() {
 	fi
   fi
 
-  if [ -f /etc/centos-release ]; then
+  if [ -f /etc/redhat-release ]; then
 	  local REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g')
 	  if [[ "${REV}" =~ ^9 ]]; then
 		  update-crypto-policies --set LEGACY
 		  echo "${COLOR_GREEN}☑ PREPAVE_VM: sha1 gpg key chek enabled${COLOR_RESET}"
-	  else
-		  sudo sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-*
-	  fi
+      cat <<EOF | sudo tee /etc/yum.repos.d/centos-stream-9.repo
+[centos9s-baseos]
+name=CentOS Stream 9 - BaseOS
+baseurl=http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/
+enabled=1
+gpgcheck=0
 
+[centos9s-appstream]
+name=CentOS Stream 9 - AppStream
+baseurl=http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/
+enabled=1
+gpgcheck=0
+EOF
+    else
+      if grep -qi 'centos' /etc/redhat-release; then
+          sudo sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-*
+      fi
+    fi
 	  if [ "${TEST_REPO_ENABLE}" == 'true' ]; then
 	  cat > /etc/yum.repos.d/onlyoffice4testing.repo <<END
 [onlyoffice4testing]
@@ -184,7 +198,6 @@ gpgcheck=1
 gpgkey=https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE
 enabled=1
 END
-          yum -y install centos*-release
 	  fi
   fi
 

@@ -14,6 +14,10 @@ on:
 
   workflow_dispatch:
     inputs:
+      rhel9:
+        type: boolean
+        description: 'RHEL 9'
+        default: true
       centos8s:
         type: boolean
         description: 'CentOS 8 Stream'
@@ -63,6 +67,12 @@ jobs:
         run: |
           matrix=$(echo '{
             "include": [
+              {
+              "execute": '${{ github.event.inputs.rhel9 || true }}',
+              "name": "RHEL 9",
+              "os": "rhel9",
+              "distr": "generic"
+              },
               {
               "execute": '${{ github.event.inputs.centos8s || true }}',
               "name": "CentOS8S",
