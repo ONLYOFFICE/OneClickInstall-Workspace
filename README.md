@@ -26,6 +26,21 @@ It has two editions - [Community, Enterprise](#onlyoffice-docs-editions).
 * **Swap file**: at least 6 GB of swap
 * **OS**: amd64 Linux distribution with kernel version 3.10 or later
 
+## Supported Operating Systems
+
+The installation scripts support the following operating systems, which are **regularly tested** as part of our CI/CD pipelines:
+<!-- OS-SUPPORT-LIST-START -->
+- RHEL 9
+- CentOS8S
+- CentOS9S
+- Debian10
+- Debian11
+- Debian12
+- Ubuntu20.04
+- Ubuntu22.04
+- Ubuntu24.04
+<!-- OS-SUPPORT-LIST-END -->
+
 ## Installing ONLYOFFICE Workspace using the provided script
 
 **STEP 1**: Download ONLYOFFICE Workspace Community Edition Docker script file:
