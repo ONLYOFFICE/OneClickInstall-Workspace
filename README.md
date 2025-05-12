@@ -28,13 +28,13 @@ It has two editions - [Community, Enterprise](#onlyoffice-docs-editions).
 
 ## Installing ONLYOFFICE Workspace using the provided script
 
-**STEP 1**: Download ONLYOFFICE Docs Community Edition Docker script file:
+**STEP 1**: Download ONLYOFFICE Workspace Community Edition Docker script file:
 
 ```bash
 wget http://download.onlyoffice.com/install/workspace-install.sh
 ```
 
-**STEP 2**: Install ONLYOFFICE Docs executing the following command:
+**STEP 2**: Install ONLYOFFICE Workspace executing the following command:
 
 ```bash
 bash workspace-install.sh

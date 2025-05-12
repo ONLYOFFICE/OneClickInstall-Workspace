@@ -1,16 +1,6 @@
 name: OneClickTests-Update
   
-run-name: >
-  Update workspace from old version test.
-
 on:
-  pull_request:
-    types: [opened, reopened, synchronize]
-    paths-ignore:
-      - '.github/**'
-      - 'tests/**'
-      - '**/README.md'
-
   workflow_dispatch:
     inputs:
       centos8s:
