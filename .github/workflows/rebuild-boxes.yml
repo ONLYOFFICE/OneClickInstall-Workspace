@@ -30,10 +30,6 @@ jobs:
       matrix:
         include:
           - distr: "generic"
-            boxes: "centos7"
-            name: "centos7"
-
-          - distr: "generic"
             boxes: "centos8s"
             name: "centos8s"
 
@@ -52,10 +48,6 @@ jobs:
           - distr: "debian"
             boxes: "bookworm64"
             name: "debian12"
-
-          - distr: "generic"
-            boxes: "ubuntu1804"
-            name: "ubuntu1804"
             
           - distr: "generic"
             boxes: "ubuntu2004"
