@@ -78,7 +78,7 @@ sudo bash workspace-install.sh --help
 
 | Flag                  | Value placeholder                                 | Description                           |
 |-----------------------|---------------------------------------------------|---------------------------------------|
-| `--installation_type` | `GROUPS` \| `WORKSPACE` \| `WORKSPACE_ENTERPRISE` | Choose edition                        |
+| `--installationtype`  | `GROUPS` \| `WORKSPACE` \| `WORKSPACE_ENTERPRISE` | Choose edition                        |
 | `--update`            | `true` \| `false`                                 | Update existing containers / packages |
 | `--skiphardwarecheck` | `true` \| `false`                                 | Skip CPU/RAM/Disk checks              |
 

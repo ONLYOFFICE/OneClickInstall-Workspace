@@ -267,7 +267,7 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
-		-it | --installation_type )
+		-it | --installationtype | --installation_type )
 			if [ "$2" != "" ]; then
 				INSTALLATION_TYPE=$(echo "$2" | awk '{print toupper($0)}');
 				shift

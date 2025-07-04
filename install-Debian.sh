@@ -21,7 +21,7 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
-		-it | --installation_type )
+		-it | --installationtype | --installation_type )
 			if [ "$2" != "" ]; then
 				INSTALLATION_TYPE=$(echo "$2" | awk '{print toupper($0)}');
 				shift
@@ -45,7 +45,7 @@ while [ "$1" != "" ]; do
 		-? | -h | --help )
 			echo "  Usage $0 [PARAMETER] [[PARAMETER], ...]"
 			echo "    Parameters:"
-			echo "      -it, --installation_type          installation type (GROUPS|WORKSPACE|WORKSPACE_ENTERPRISE)"
+			echo "      -it, --installationtype           installation type (GROUPS|WORKSPACE|WORKSPACE_ENTERPRISE)"
 			echo "      -u, --update                      use to update existing components (true|false)"
 			echo "      -ls, --localscripts               use 'true' to run local scripts (true|false)"
 			echo "      -skiphc, --skiphardwarecheck      use to skip hardware check (true|false)"
