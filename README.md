@@ -76,68 +76,68 @@ sudo bash workspace-install.sh --help
 ### Common flags
 > Works for both Docker and package installations
 
-| Flag                  | Value placeholder                                 | Description                           |
-|-----------------------|---------------------------------------------------|---------------------------------------|
-| `--installationtype`  | `GROUPS` \| `WORKSPACE` \| `WORKSPACE_ENTERPRISE` | Choose edition                        |
-| `--update`            | `true` \| `false`                                 | Update existing containers / packages |
-| `--skiphardwarecheck` | `true` \| `false`                                 | Skip CPU/RAM/Disk checks              |
+| Flag                  | Value placeholder                             | Default value            | Description  |
+|-----------------------|-----------------------------------------------|--------------------------|--------------|
+| `--installationtype`  | `GROUPS`\|`WORKSPACE`\|`WORKSPACE_ENTERPRISE` | `WORKSPACE_ENTERPRISE`   | Edition      |
+| `--update`            | `true` \| `false`                             | `false`                  | Update       |
+| `--skiphardwarecheck` | `true` \| `false`                             | `false`                  | Skip checks  |
 
 ### Docker flags
 > Applies only to Docker installation
 
-| Flag                       | Value placeholder            | Description                                    |
-|----------------------------|------------------------------|------------------------------------------------|
-| `--communityimage`         | `<NAME>` \| `<.tar.gz>`      | Community Server image name or tar.gz path     |
-| `--documentimage`          | `<NAME>` \| `<.tar.gz>`      | Document Server image name or tar.gz path      |
-| `--mailimage`              | `<NAME>` \| `<.tar.gz>`      | Mail Server image name or tar.gz path          |
-| `--elasticsearchimage`     | `<NAME>` \| `<.tar.gz>`      | Elasticsearch image name or tar.gz path        |
-| `--controlpanelimage`      | `<NAME>` \| `<.tar.gz>`      | Control Panel image name or tar.gz path        |
-| `--mysqlimage`             | `<NAME>` \| `<.tar.gz>`      | MySQL image name or tar.gz path                |
-| `--communityversion`       | `<VERSION>`                  | Community Server version                       |
-| `--documentversion`        | `<VERSION>`                  | Document Server version                        |
-| `--mailversion`            | `<VERSION>`                  | Mail Server version                            |
-| `--elasticsearchversion`   | `<VERSION>`                  | Elasticsearch version                          |
-| `--controlpanelversion`    | `<VERSION>`                  | Control Panel version                          |
-| `--documentserverip`       | `<IP>`                       | Document Server container IP                   |
-| `--elasticsearchhost`      | `<HOST>`                     | Elasticsearch host                             |
-| `--elasticsearchport`      | `<PORT>`                     | Elasticsearch port                             |
-| `--mailserverip`           | `<IP>`                       | Mail Server container IP                       |
-| `--mailserverdbip`         | `<IP>`                       | Mail Server DB IP                              |
-| `--hub`                    | `<DOMAIN>`                   | DockerHub name (or registry domain)            |
-| `--username`               | `<USER>`                     | DockerHub username                             |
-| `--password`               | `<PASS>`                     | DockerHub password                             |
-| `--installcommunityserver` | `true` \| `false` \| `pull`  | Install / skip / pre-pull Community Server     |
-| `--installdocumentserver`  | `true` \| `false` \| `pull`  | Install / skip / pre-pull Document Server      |
-| `--installmailserver`      | `true` \| `false` \| `pull`  | Install / skip / pre-pull Mail Server          |
-| `--installelasticsearch`   | `true` \| `false` \| `pull`  | Install / skip / pre-pull Elasticsearch        |
-| `--installcontrolpanel`    | `true` \| `false` \| `pull`  | Install / skip / pre-pull Control Panel        |
-| `--useasexternalserver`    | `true` \| `false`            | Expose services externally                     |
-| `--partnerdatafile`        | `<FILE>`                     | Partner data file path                         |
-| `--makeswap`               | `true` \| `false`            | Auto-create swap file                          |
-| `--communityport`          | `<PORT>` (80)                | Community Server HTTP port                     |
-| `--mysqlhost`              | `<HOST>`                     | MySQL host                                     |
-| `--mysqlport`              | `<PORT>`                     | MySQL port                                     |
-| `--mysqlrootuser`          | `<USER>`                     | MySQL root user                                |
-| `--mysqlrootpassword`      | `<PASSWORD>`                 | MySQL root password                            |
-| `--mysqldatabase`          | `<DB>`                       | Community Server database name                 |
-| `--mysqluser`              | `<USER>`                     | Community Server DB user                       |
-| `--mysqlpassword`          | `<PASSWORD>`                 | Community Server DB user password              |
-| `--mysqlmaildatabase`      | `<DB>`                       | Mail Server database name                      |
-| `--mysqlmailuser`          | `<USER>`                     | Mail Server DB user                            |
-| `--mysqlmailpassword`      | `<PASSWORD>`                 | Mail Server DB user password                   |
-| `--skipversioncheck`       | `true` \| `false`            | Skip version check during update               |
-| `--skipdomaincheck`        | `true` \| `false`            | Skip domain check when installing mail server  |
-| `--machinekey`             | `<KEY>`                      | core.machinekey setting                        |
-| `--jwtenabled`             | `true` \| `false`            | Enable JWT validation                          |
-| `--jwtheader`              | `<HEADER>`                   | JWT HTTP header name                           |
-| `--jwtsecret`              | `<SECRET>`                   | JWT secret key                                 |
+| Flag                       | Value placeholder            | Default value                  | Description             |
+|----------------------------|------------------------------|--------------------------------|-------------------------|
+| `--communityimage`         | `<NAME>` \| `<.tar.gz>`      | `onlyoffice/communityserver`   | CS image                |
+| `--documentimage`          | `<NAME>` \| `<.tar.gz>`      | `onlyoffice/documentserver-ee` | Docs image              |
+| `--mailimage`              | `<NAME>` \| `<.tar.gz>`      | `onlyoffice/mailserver`        | Mail image              |
+| `--elasticsearchimage`     | `<NAME>` \| `<.tar.gz>`      | `onlyoffice/elasticsearch`     | ES image                |
+| `--controlpanelimage`      | `<NAME>` \| `<.tar.gz>`      | `onlyoffice/controlpanel`      | CP image                |
+| `--mysqlimage`             | `<NAME>` \| `<.tar.gz>`      | `mysql`                        | MySQL image             |
+| `--communityversion`       | `<VERSION>`                  | *(latest stable)*              | CS version              |
+| `--documentversion`        | `<VERSION>`                  | *(latest stable)*              | Docs version            |
+| `--mailversion`            | `<VERSION>`                  | *(latest stable)*              | Mail version            |
+| `--elasticsearchversion`   | `<VERSION>`                  | `7.16.3`                       | ES version              |
+| `--controlpanelversion`    | `<VERSION>`                  | *(latest stable)*              | CP version              |
+| `--documentserverip`       | `<IP>`                       | -                              | Docs IP                 |
+| `--elasticsearchhost`      | `<HOST>`                     | -                              | ES host                 |
+| `--elasticsearchport`      | `<PORT>`                     | `9200`                         | ES port                 |
+| `--mailserverip`           | `<IP>`                       | -                              | Mail IP                 |
+| `--mailserverdbip`         | `<IP>`                       | -                              | Mail DB IP              |
+| `--hub`                    | `<DOMAIN>`                   | -                              | DockerHub domain        |
+| `--username`               | `<USER>`                     | -                              | DockerHub user          |
+| `--password`               | `<PASS>`                     | -                              | DockerHub password      |
+| `--installcs`              | `true` \| `false` \| `pull`  | `true`                         | Install/skip/pull CS    |
+| `--installdocs`            | `true` \| `false` \| `pull`  | `true`                         | Install/skip/pull DS    |
+| `--installmailserver`      | `true` \| `false` \| `pull`  | `true`                         | Install/skip/pull Mail  |
+| `--installelasticsearch`   | `true` \| `false` \| `pull`  | `true`                         | Install/skip/pull ES    |
+| `--installcontrolpanel`    | `true` \| `false` \| `pull`  | `true`                         | Install/skip/pull CP    |
+| `--useasexternalserver`    | `true` \| `false`            | `false`                        | Expose services         |
+| `--partnerdatafile`        | `<FILE>`                     | -                              | Partner data path       |
+| `--makeswap`               | `true` \| `false`            | `true`                         | Create swap file        |
+| `--communityport`          | `<PORT>`                     | `80`                           | HTTP port for CS        |
+| `--mysqlhost`              | `<HOST>`                     | -                              | MySQL host              |
+| `--mysqlport`              | `<PORT>`                     | `3306`                         | MySQL port              |
+| `--mysqlrootuser`          | `<USER>`                     | `root`                         | MySQL root user         |
+| `--mysqlrootpassword`      | `<PASSWORD>`                 | `my-secret-pw`                 | MySQL root password     |
+| `--mysqldatabase`          | `<DB>`                       | `onlyoffice`                   | CS database name        |
+| `--mysqluser`              | `<USER>`                     | `onlyoffice_user`              | CS database user        |
+| `--mysqlpassword`          | `<PASSWORD>`                 | `onlyoffice_pass`              | CS user password        |
+| `--mysqlmaildatabase`      | `<DB>`                       | `onlyoffice_mailserver`        | Mail DB name            |
+| `--mysqlmailuser`          | `<USER>`                     | `mail_admin`                   | Mail DB user            |
+| `--mysqlmailpassword`      | `<PASSWORD>`                 | `Isadmin123`                   | Mail DB password        |
+| `--skipversioncheck`       | `true` \| `false`            | `false`                        | Skip version check      |
+| `--skipdomaincheck`        | `true` \| `false`            | `false`                        | Skip domain check       |
+| `--machinekey`             | `<KEY>`                      | *(auto-generate)*              | machinekey setting      |
+| `--jwtenabled`             | `true` \| `false`            | `true`                         | Enable JWT              |
+| `--jwtheader`              | `<HEADER>`                   | `AuthorizationJwt`             | JWT header              |
+| `--jwtsecret`              | `<SECRET>`                   | *(auto-generate)*              | JWT secret key          |
 
 ### Package-specific flags
 > Applies only to package installation
 
-| Flag             | Value placeholder | Description       |
-|------------------|-------------------|-------------------|
-| `--localscripts` | `true` \| `false` | Run local scripts |
+| Flag             | Value placeholder | Default value  | Description       |
+|------------------|-------------------|----------------|-------------------|
+| `--localscripts` | `true` \| `false` | `false`        | Run local scripts |
 
 ## 💡 Examples
 
