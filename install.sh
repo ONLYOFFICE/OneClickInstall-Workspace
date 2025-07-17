@@ -225,14 +225,14 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
-		-ics | --installcommunityserver )
+		-ics | --installcs | --installcommunityserver )
 			if [ "$2" != "" ]; then
 				INSTALL_COMMUNITY_SERVER=$2
 				shift
 			fi
 		;;
 
-		-ids | --installdocumentserver )
+		-ids | --installdocs | --installdocumentserver )
 			if [ "$2" != "" ]; then
 				INSTALL_DOCUMENT_SERVER=$2
 				shift
@@ -465,14 +465,14 @@ while [ "$1" != "" ]; do
 			echo "COMMUNITY SERVER OPTIONS:"
 			echo "--communityimage          <NAME>|<.tar.gz>       Community-Server image name or .tar.gz"
 			echo "--communityversion        <VERSION_TAG>          Community-Server version"
-			echo "--installcommunityserver  <true|false|pull>      Install / skip / pre-pull Community Server"
+			echo "--installcs               <true|false|pull>      Install / skip / pre-pull Community Server"
 			echo "--communityport           <PORT>                 External port (default: 80)"
 			echo "--machinekey              <KEY>                  Value for core.machinekey"
 			echo
 			echo "DOCUMENT SERVER OPTIONS:"
 			echo "--documentimage           <NAME>|<.tar.gz>       Document-Server image name or .tar.gz"
 			echo "--documentversion         <VERSION_TAG>          Document-Server version"
-			echo "--installdocumentserver   <true|false|pull>      Install/Update Document Server"
+			echo "--installdocs             <true|false|pull>      Install/Update Document Server"
 			echo "--documentserverip        <IP>                   Document-Server IP (if external)"
 			echo "--useasexternalserver     <true|false>           Expose services externally"
 			echo
@@ -530,16 +530,16 @@ while [ "$1" != "" ]; do
 			echo
 			echo "    Install Document Server only. Skip the installation of Mail Server, Community Server and Control Panel:"
 			echo "      sudo bash $HELP_TARGET \\"
-			echo "        --installcommunityserver false \\"
-			echo "        --installdocumentserver true \\"
+			echo "        --installcs false \\"
+			echo "        --installdocs true \\"
 			echo "        --installcontrolpanel false \\"
 			echo "        --installmailserver false \\"
 			echo "        --useasexternalserver true"
 			echo
 			echo "    Install Mail Server only. Skip the installation of Document Server, Community Server and Control Panel:"
 			echo "      sudo bash $HELP_TARGET \\"
-			echo "        --installcommunityserver false \\"
-			echo "        --installdocumentserver false \\"
+			echo "        --installcs false \\"
+			echo "        --installdocs false \\"
 			echo "        --installcontrolpanel false \\"
 			echo "        --installmailserver true \\"
 			echo "        --maildomain yourdomain.com \\"
@@ -547,9 +547,9 @@ while [ "$1" != "" ]; do
 			echo
 			echo "    Install Community Server with Control Panel and connect it with Document Server installed on a different machine which has the 192.168.3.202 IP address:"
 			echo "      sudo bash $HELP_TARGET \\"
-			echo "        --installcommunityserver true \\"
+			echo "        --installcs true \\"
 			echo "        --installcontrolpanel true \\"
-			echo "        --installdocumentserver false \\"
+			echo "        --installdocs false \\"
 			echo "        --installmailserver false \\"
 			echo "        --documentserverip 192.168.3.202"
 			echo
@@ -560,7 +560,7 @@ while [ "$1" != "" ]; do
 			echo "      sudo bash $HELP_TARGET \\"
 			echo "        --update true \\"
 			echo "        --documentversion 4.4.2.20 \\"
-			echo "        --installcommunityserver false \\"
+			echo "        --installcs false \\"
 			echo "        --installcontrolpanel false \\"
 			echo "        --installmailserver false"
 			echo
@@ -568,7 +568,7 @@ while [ "$1" != "" ]; do
 			echo "      sudo bash $HELP_TARGET \\"
 			echo "        --update true \\"
 			echo "        --communityversion 12.7.1.1942 \\"
-			echo "        --installdocumentserver false \\"
+			echo "        --installdocs false \\"
 			echo "        --installcontrolpanel false \\"
 			echo "        --installmailserver false"
 			echo
@@ -576,16 +576,16 @@ while [ "$1" != "" ]; do
 			echo "      sudo bash $HELP_TARGET \\"
 			echo "        --update true \\"
 			echo "        --mailversion 1.6.27 \\"
-			echo "        --installcommunityserver false \\"
-			echo "        --installdocumentserver false \\"
+			echo "        --installcs false \\"
+			echo "        --installdocs false \\"
 			echo "        --installcontrolpanel false"
 			echo
 			echo "    Update Control Panel only to version 2.1.0.93 and skip the update for all other components:"
 			echo "      sudo bash $HELP_TARGET \\"
 			echo "        --update true \\"
 			echo "        --controlpanelversion 2.1.0.93 \\"
-			echo "        --installcommunityserver false \\"
-			echo "        --installdocumentserver false \\"
+			echo "        --installcs false \\"
+			echo "        --installdocs false \\"
 			echo "        --installmailserver false"
 			echo
 			exit 0

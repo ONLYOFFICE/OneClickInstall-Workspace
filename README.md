@@ -163,8 +163,8 @@ sudo bash workspace-install.sh --installmailserver false
 4. Document Server only (external)
 ```bash
 sudo bash workspace-install.sh \
-  --installcommunityserver false \
-  --installdocumentserver true \
+  --installcs false \
+  --installdocs true \
   --installcontrolpanel false \
   --installmailserver false \
   --useasexternalserver true
@@ -175,7 +175,7 @@ sudo bash workspace-install.sh \
 sudo bash workspace-install.sh \
   --update true \
   --communityversion 12.7.1.1942 \
-  --installdocumentserver false \
+  --installdocs false \
   --installcontrolpanel false \
   --installmailserver false
 ```
