@@ -70,6 +70,17 @@ if [ -z "${SKIP_HARDWARE_CHECK}" ]; then
    SKIP_HARDWARE_CHECK="false";
 fi
 
+# Switch to archived APT repos for EOL Debian 10
+if grep -q buster /etc/os-release; then
+    echo "deb http://archive.debian.org/debian buster main contrib non-free" > /etc/apt/sources.list
+    echo "deb http://archive.debian.org/debian-security buster/updates main contrib non-free" >> /etc/apt/sources.list
+
+    find /etc/apt -type f \( -name '*.list' -o -name '*.sources' \) -exec sed -Ei \
+        -e 's|http://deb\.debian\.org/debian/?|http://archive.debian.org/debian/|g' \
+        -e 's|http://security\.debian\.org/debian-security/?|http://archive.debian.org/debian-security/|g' \
+        -e 's|http://ftp\.uk\.debian\.org/debian/?|http://archive.debian.org/debian/|g' {} +
+fi
+
 apt-get update -y --allow-releaseinfo-change
 
 if [ $(dpkg-query -W -f='${Status}' curl 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
