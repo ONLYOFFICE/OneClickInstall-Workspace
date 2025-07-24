@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        run: |
+          git clone https://${{ secrets.GITEA_TOKEN }}@${{ secrets.GITEA_HOST }}/${{ github.repository }} -b ${{ github.ref_name }} --single-branch --depth=1
 
       - name: Install yq
         run: |
@@ -23,6 +24,7 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
 
       - name: Update OS list in README
+        working-directory: "${{ github.repository#*/ }}"
         run: |
           OS_LIST=$(yq -r '.jobs.prepare.steps[] | select(.name == "Set matrix names") | .run' .github/workflows/ci.yml \
             | grep -oP '"name"\s*:\s*"\K[^"]+' \
@@ -43,6 +45,7 @@ jobs:
           && mv README.new README.md
 
       - name: Commit changes (if any)
+        working-directory: "${{ github.repository#*/ }}"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
