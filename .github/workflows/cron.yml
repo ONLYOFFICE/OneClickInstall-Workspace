@@ -1,0 +1,28 @@
+name: Cron triggered workflows
+
+on:
+  schedule:
+    - cron: '0 21 * * 0'
+  workflow_dispatch:
+
+jobs:
+  trigger-workflows:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Select latest version
+        id: selected
+        run: |
+          latest_branch=$(gh api repos/${GITHUB_REPOSITORY}/branches \
+            --jq '.[] | select(.name | test("^(release|hotfix)/v[0-9]+\\.[0-9]+\\.[0-9]+$")) | .name' \
+            | awk -F/ '{ ver=substr($2,2); print ver " " $0 }' | sort -t. -k1,1n -k2,2n -k3,3n | tail -n1 | cut -d' ' -f2)
+          latest_branch=${latest_branch:-develop}
+          echo "branch=$latest_branch" >> "$GITHUB_OUTPUT"
+      - name: Trigger ci-update on latest branch
+        if: steps.selected.outputs.branch != ''
+        run: |
+          echo "Triggering ci-update.yml on ${{ steps.selected.outputs.branch }}"
+          gh workflow run ci-update.yml --repo "${GITHUB_REPOSITORY}" --ref "${{ steps.selected.outputs.branch }}"
+
