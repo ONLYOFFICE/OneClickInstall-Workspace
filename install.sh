@@ -1153,11 +1153,16 @@ install_mysql_server () {
 			else
 				sed -i "s/tls_version.*/tls_version = TLSv1.2/" ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			fi
-		elif [ "$INSTALL_MAIL_SERVER" != "true" ] && [[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -ge "8000034000" ]]; then
-			if grep -q "mysql_native_password" ${BASE_DIR}/mysql/initdb/setup.sql; then
-				sed -i 's/mysql_native_password/caching_sha2_password/g' ${BASE_DIR}/mysql/initdb/setup.sql
+		fi
+
+		if file_exists "${BASE_DIR}/mysql/initdb/setup.sql"; then
+			if grep -q "caching_sha2_password" ${BASE_DIR}/mysql/initdb/setup.sql; then
+				sed -i 's/caching_sha2_password/mysql_native_password/g' ${BASE_DIR}/mysql/initdb/setup.sql
+			elif ! grep -q "mysql_native_password" ${BASE_DIR}/mysql/initdb/setup.sql; then
+				sed -i 's/IDENTIFIED BY/IDENTIFIED WITH mysql_native_password BY/g' ${BASE_DIR}/mysql/initdb/setup.sql
 			fi
 		fi
+
 		docker restart ${MYSQL_SERVER_ID};
 	fi
 
@@ -1173,16 +1178,12 @@ log-error = /var/log/mysql/error.log" > ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			[[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -lt "8000000000" ]] && echo "tls_version = TLSv1.2" >> ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			chmod 0644 ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 		fi
-		
-		if [ "$INSTALL_MAIL_SERVER" = "true" ]; then
-			MYSQL_AUTHENTICATION_PLUGIN="WITH mysql_native_password"
-		fi 
 
 		if ! file_exists ${BASE_DIR}/mysql/initdb/setup.sql; then
-                        echo "CREATE USER '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
-CREATE USER '$MYSQL_MAIL_USER'@'%' IDENTIFIED $MYSQL_AUTHENTICATION_PLUGIN BY '$MYSQL_MAIL_ROOT_PASSWORD';
-ALTER USER 'root'@'%' IDENTIFIED $MYSQL_AUTHENTICATION_PLUGIN BY '$MYSQL_ROOT_PASSWORD';
-ALTER USER 'root'@'localhost' IDENTIFIED $MYSQL_AUTHENTICATION_PLUGIN BY '$MYSQL_ROOT_PASSWORD';
+                        echo "CREATE USER '$MYSQL_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$MYSQL_PASSWORD';
+CREATE USER '$MYSQL_MAIL_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$MYSQL_MAIL_ROOT_PASSWORD';
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';
 GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_ROOT_USER'@'%';
 GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_USER'@'%';
 GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_MAIL_USER'@'%';
@@ -2355,6 +2356,8 @@ start_installation () {
 				check_vsyscall
 			fi
 		fi
+	elif [[ -z $(get_container_id "$MAIL_CONTAINER_NAME") ]]; then
+		INSTALL_MAIL_SERVER="false";
 	fi
 
 	if [ "$MAKESWAP" == "true" ]; then
