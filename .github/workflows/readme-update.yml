@@ -24,7 +24,7 @@ jobs:
           sudo chmod +x /usr/local/bin/yq
 
       - name: Update OS list in README
-        working-directory: "${{ github.repository#*/ }}"
+        working-directory: ${{ github.event.repository.name }}
         run: |
           OS_LIST=$(yq -r '.jobs.prepare.steps[] | select(.name == "Set matrix names") | .run' .github/workflows/ci.yml \
             | grep -oP '"name"\s*:\s*"\K[^"]+' \
@@ -45,7 +45,7 @@ jobs:
           && mv README.new README.md
 
       - name: Commit changes (if any)
-        working-directory: "${{ github.repository#*/ }}"
+        working-directory: ${{ github.event.repository.name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
