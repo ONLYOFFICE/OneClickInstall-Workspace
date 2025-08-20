@@ -19,9 +19,6 @@ if [ -e /etc/redis.conf ]; then
  systemctl restart redis
 fi
 
-sed "/host\s*all\s*all\s*127\.0\.0\.1\/32\s*ident$/s|ident$|trust|" -i /var/lib/pgsql/data/pg_hba.conf
-sed "/host\s*all\s*all\s*::1\/128\s*ident$/s|ident$|trust|" -i /var/lib/pgsql/data/pg_hba.conf
-
 for SVC in $package_services; do
 		systemctl start $SVC	
 		systemctl enable $SVC

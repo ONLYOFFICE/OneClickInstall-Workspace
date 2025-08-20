@@ -207,7 +207,7 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				python3-pip \
 				nginx-extras \
 				expect \
-				dotnet-sdk-7.0
+				dotnet-sdk-8.0
 
 if apt-cache search --names-only '^ffmpeg$' | grep -q "ffmpeg"; then
 	apt-get install -yq ffmpeg
@@ -233,3 +233,5 @@ if which apparmor_parser && [ ! -f /etc/apparmor.d/disable/usr.sbin.mysqld ] && 
 	ln -sf /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/;
 	apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld;
 fi
+
+hold_package_version

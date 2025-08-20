@@ -225,14 +225,14 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
-		-ics | --installcommunityserver )
+		-ics | --installcs | --installcommunityserver )
 			if [ "$2" != "" ]; then
 				INSTALL_COMMUNITY_SERVER=$2
 				shift
 			fi
 		;;
 
-		-ids | --installdocumentserver )
+		-ids | --installdocs | --installdocumentserver )
 			if [ "$2" != "" ]; then
 				INSTALL_DOCUMENT_SERVER=$2
 				shift
@@ -267,7 +267,7 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
-		-it | --installation_type )
+		-it | --installationtype | --installation_type )
 			if [ "$2" != "" ]; then
 				INSTALLATION_TYPE=$(echo "$2" | awk '{print toupper($0)}');
 				shift
@@ -452,87 +452,141 @@ while [ "$1" != "" ]; do
 		-? | -h | --help )
 			echo "  Usage: bash $HELP_TARGET [PARAMETER] [[PARAMETER], ...]"
 			echo
-			echo "    Parameters:"
-			echo "      -ci, --communityimage             community image name or .tar.gz file path"
-			echo "      -di, --documentimage              document image name or .tar.gz file path"
-			echo "      -mi, --mailimage                  mail image name or .tar.gz file path"
-			echo "      -esi, --elasticsearchimage        elasticsearch image name or .tar.gz file path"
-			echo "      -cpi, --controlpanelimage         control panel image name or .tar.gz file path"
-			echo "      -mysqli, --mysqlimage             mysql image name or .tar.gz file path"
-			echo "      -cv, --communityversion           community version"
-			echo "      -dv, --documentversion            document version"
-			echo "      -dip, --documentserverip          document server ip"
-			echo "      -esv, --elasticsearchversion      elasticsearch version"
-			echo "      -esh, --elasticsearchhost         elasticsearch server host"
-			echo "      -msp, --elasticsearchport         elasticsearch server port"
-			echo "      -mv, --mailversion                mail version"
-			echo "      -mip, --mailserverip              mail server ip"
-			echo "      -mdbip, --mailserverdbip          mail server db ip"
-			echo "      -cpv, --controlpanelversion       control panel version"
-			echo "      -md, --maildomain                 mail domail name"
-			echo "      -u, --update                      use to update existing components (true|false)"
-			echo "      -hub, --hub                       dockerhub name"
-			echo "      -un, --username                   dockerhub username"
-			echo "      -p, --password                    dockerhub password"
-			echo "      -ics, --installcommunityserver    install or update community server (true|false|pull)"
-			echo "      -ids, --installdocumentserver     install or update document server (true|false|pull)"
-			echo "      -ims, --installmailserver         install or update mail server (true|false|pull)"
-			echo "      -ies, --installelasticsearch      install or update elasticsearch (true|false|pull)"
-			echo "      -icp, --installcontrolpanel       install or update control panel (true|false|pull)"
-			echo "      -es, --useasexternalserver        use as external server (true|false)"
-			echo "      -pdf, --partnerdatafile           partner data file"
-			echo "      -it, --installation_type          installation type (GROUPS|WORKSPACE|WORKSPACE_ENTERPRISE)"
-			echo "      -ms, --makeswap                   make swap file (true|false)"
-			echo "      -mysqlh, --mysqlhost              mysql server host"
-			echo "      -mysqlprt, --mysqlport            mysql server port"
-			echo "      -mysqlru, --mysqlrootuser         mysql server root user"
-			echo "      -mysqlrp, --mysqlrootpassword     mysql server root password"
-			echo "      -mysqld, --mysqldatabase          community server database name"
-			echo "      -mysqlu, --mysqluser              community server database user"
-			echo "      -mysqlp, --mysqlpassword          community server database password"
-			echo "      -mysqlmd, --mysqlmaildatabase     mail server database name"
-			echo "      -mysqlmu, --mysqlmailuser         mail server database user"
-			echo "      -mysqlmp, --mysqlmailpassword     mail server database password"
-			echo "      -skiphc, --skiphardwarecheck      skip hardware check (true|false)"
-			echo "      -skipvc, --skipversioncheck       skip version check while update (true|false)"
-			echo "      -skipdc, --skipdomaincheck        skip domain check when installing mail server (true|false)"
-			echo "      -cp, --communityport              community port (default value 80)"
-			echo "      -mk, --machinekey                 setting for core.machinekey"
-			echo "      -je, --jwtenabled                 specifies the enabling the JWT validation (true|false)"
-			echo "      -jh, --jwtheader                  defines the http header that will be used to send the JWT"
-			echo "      -js, --jwtsecret                  defines the secret key to validate the JWT in the request"
-			echo "      -?, -h, --help                    this help"
+			echo "DOCKER REGISTRY AUTH:"
+			echo "--hub                     <DOMAIN>               DockerHub name (or registry domain)"
+			echo "--username                <USERNAME>             DockerHub username"
+			echo "--password                <PASSWORD>             DockerHub password"
 			echo
-			echo "  Examples"
-			echo "    Install all the solution components:"
-			echo "      bash $HELP_TARGET -md yourdomain.com"
+			echo "INSTALLATION MODE:"
+			echo "--installationtype        <GROUPS|WORKSPACE|WORKSPACE_ENTERPRISE>"
+			echo "                          Installation type"
+			echo "--update                  <true|false>           Update existing components"
+			echo
+			echo "COMMUNITY SERVER OPTIONS:"
+			echo "--communityimage          <NAME>|<.tar.gz>       Community-Server image name or .tar.gz"
+			echo "--communityversion        <VERSION_TAG>          Community-Server version"
+			echo "--installcs               <true|false|pull>      Install / skip / pre-pull Community Server"
+			echo "--communityport           <PORT>                 External port (default: 80)"
+			echo "--machinekey              <KEY>                  Value for core.machinekey"
+			echo
+			echo "DOCUMENT SERVER OPTIONS:"
+			echo "--documentimage           <NAME>|<.tar.gz>       Document-Server image name or .tar.gz"
+			echo "--documentversion         <VERSION_TAG>          Document-Server version"
+			echo "--installdocs             <true|false|pull>      Install/Update Document Server"
+			echo "--documentserverip        <IP>                   Document-Server IP (if external)"
+			echo "--useasexternalserver     <true|false>           Expose services externally"
+			echo
+			echo "MAIL SERVER OPTIONS:"
+			echo "--mailimage               <NAME>|<.tar.gz>       Mail-Server image name or .tar.gz"
+			echo "--mailversion             <VERSION_TAG>          Mail-Server version"
+			echo "--installmailserver       <true|false|pull>      Install/Update Mail Server"
+			echo "--mailserverip            <IP>                   Mail-Server IP"
+			echo "--mailserverdbip          <IP>                   Mail-Server DB IP"
+			echo "--maildomain              <DOMAIN>               Mail domain name"
+			echo
+			echo "ELASTICSEARCH OPTIONS:"
+			echo "--elasticsearchimage      <NAME>|<.tar.gz>       Elasticsearch image name or .tar.gz"
+			echo "--elasticsearchversion    <VERSION_TAG>          Elasticsearch version"
+			echo "--installelasticsearch    <true|false|pull>      Install/Update Elasticsearch"
+			echo "--elasticsearchhost       <HOST>                 Elasticsearch host"
+			echo "--elasticsearchport       <PORT>                 Elasticsearch port"
+			echo
+			echo "CONTROL PANEL OPTIONS:"
+			echo "--controlpanelimage       <NAME>|<.tar.gz>       Control-Panel image name or .tar.gz"
+			echo "--controlpanelversion     <VERSION_TAG>          Control-Panel version"
+			echo "--installcontrolpanel     <true|false|pull>      Install/Update Control Panel"
+			echo
+			echo "DATABASE (MySQL) OPTIONS:"
+			echo "--mysqlimage              <NAME>|<.tar.gz>       MySQL image name or .tar.gz"
+			echo "--mysqlhost               <HOST>                 MySQL host"
+			echo "--mysqlport               <PORT>                 MySQL port"
+			echo "--mysqlrootuser           <USER>                 MySQL root user"
+			echo "--mysqlrootpassword       <PASSWORD>             MySQL root password"
+			echo "--mysqldatabase           <DB_NAME>              Community-Server DB name"
+			echo "--mysqluser               <USERNAME>             Community-Server DB user"
+			echo "--mysqlpassword           <PASSWORD>             Community-Server DB password"
+			echo "--mysqlmaildatabase       <DB_NAME>              Mail-Server DB name"
+			echo "--mysqlmailuser           <USERNAME>             Mail-Server DB user"
+			echo "--mysqlmailpassword       <PASSWORD>             Mail-Server DB password"
+			echo
+			echo "JWT AUTHENTICATION:"
+			echo "--jwtenabled              <true|false>           Enable JWT validation"
+			echo "--jwtheader               <header_name>          HTTP header for JWT tokens (e.g., AuthorizationJwt)"
+			echo "--jwtsecret               <secret>               JWT secret key (default: random key)"
+			echo
+			echo "ADVANCED OPTIONS:"
+			echo "--partnerdatafile         <FILE>                 Partner data file"
+			echo "--makeswap                <true|false>           Create swap file"
+			echo "--skiphardwarecheck       <true|false>           Skip hardware check"
+			echo "--skipversioncheck        <true|false>           Skip version check during update"
+			echo "--skipdomaincheck         <true|false>           Skip mail domain check"
+			echo
+			echo "EXAMPLES:"
+			echo "    Install all components with default settings:"
+			echo "      sudo bash $HELP_TARGET --maildomain yourdomain.com"
 			echo
 			echo "    Install all the components without Mail Server:"
-			echo "      bash $HELP_TARGET -ims false"
+			echo "      sudo bash $HELP_TARGET --installmailserver false"
 			echo
 			echo "    Install Document Server only. Skip the installation of Mail Server, Community Server and Control Panel:"
-			echo "      bash $HELP_TARGET -ics false -ids true -icp false -ims false -es true"
+			echo "      sudo bash $HELP_TARGET \\"
+			echo "        --installcs false \\"
+			echo "        --installdocs true \\"
+			echo "        --installcontrolpanel false \\"
+			echo "        --installmailserver false \\"
+			echo "        --useasexternalserver true"
 			echo
 			echo "    Install Mail Server only. Skip the installation of Document Server, Community Server and Control Panel:"
-			echo "      bash $HELP_TARGET -ics false -ids false -icp false -ims true -md yourdomain.com -es true"
+			echo "      sudo bash $HELP_TARGET \\"
+			echo "        --installcs false \\"
+			echo "        --installdocs false \\"
+			echo "        --installcontrolpanel false \\"
+			echo "        --installmailserver true \\"
+			echo "        --maildomain yourdomain.com \\"
+			echo "        --useasexternalserver true"
 			echo
 			echo "    Install Community Server with Control Panel and connect it with Document Server installed on a different machine which has the 192.168.3.202 IP address:"
-			echo "      bash $HELP_TARGET -ics true -icp true -ids false -ims false -dip 192.168.3.202"
+			echo "      sudo bash $HELP_TARGET \\"
+			echo "        --installcs true \\"
+			echo "        --installcontrolpanel true \\"
+			echo "        --installdocs false \\"
+			echo "        --installmailserver false \\"
+			echo "        --documentserverip 192.168.3.202"
 			echo
 			echo "    Update all installed components. Stop the containers that need to be updated, remove them and run the latest versions of the corresponding components. The portal data should be picked up automatically:"
-			echo "      bash $HELP_TARGET -u true"
+			echo "      sudo bash $HELP_TARGET --update true"
 			echo
 			echo "    Update Document Server only to version 4.4.2.20 and skip the update for all other components:"
-			echo "      bash $HELP_TARGET -u true -dv 4.4.2.20 -ics false -icp false -ims false"
+			echo "      sudo bash $HELP_TARGET \\"
+			echo "        --update true \\"
+			echo "        --documentversion 4.4.2.20 \\"
+			echo "        --installcs false \\"
+			echo "        --installcontrolpanel false \\"
+			echo "        --installmailserver false"
 			echo
-			echo "    Update Community Server only to version 9.1.0.393 and skip the update for all other components:"
-			echo "      bash $HELP_TARGET -u true -cv 9.1.0.393 -ids false -icp false -ims false"
+			echo "    Update Community Server only to version 12.7.1.1942 and skip the update for all other components:"
+			echo "      sudo bash $HELP_TARGET \\"
+			echo "        --update true \\"
+			echo "        --communityversion 12.7.1.1942 \\"
+			echo "        --installdocs false \\"
+			echo "        --installcontrolpanel false \\"
+			echo "        --installmailserver false"
 			echo
 			echo "    Update Mail Server only to version 1.6.27 and skip the update for all other components:"
-			echo "      bash $HELP_TARGET -u true -mv 1.6.27 -ics false -ids false -icp false"
+			echo "      sudo bash $HELP_TARGET \\"
+			echo "        --update true \\"
+			echo "        --mailversion 1.6.27 \\"
+			echo "        --installcs false \\"
+			echo "        --installdocs false \\"
+			echo "        --installcontrolpanel false"
 			echo
 			echo "    Update Control Panel only to version 2.1.0.93 and skip the update for all other components:"
-			echo "      bash $HELP_TARGET -u true -cpv 2.1.0.93 -ics false -ids false -ims false"
+			echo "      sudo bash $HELP_TARGET \\"
+			echo "        --update true \\"
+			echo "        --controlpanelversion 2.1.0.93 \\"
+			echo "        --installcs false \\"
+			echo "        --installdocs false \\"
+			echo "        --installmailserver false"
 			echo
 			exit 0
 		;;
@@ -877,13 +931,22 @@ install_docker () {
 		systemctl start docker
 		systemctl enable docker
 
-	elif [ "${DIST}" == "Red Hat Enterprise Linux Server" ]; then
+	elif [[ "${DIST}" == Red\ Hat\ Enterprise\ Linux* ]]; then
 
-		echo ""
-		echo "Your operating system does not allow Docker CE installation."
-		echo "You can install Docker EE using the manual here - https://docs.docker.com/engine/installation/linux/rhel/"
-		echo ""
-		exit 1;
+		if [[ "${REV}" -gt "7" ]]; then
+			yum remove -y docker docker-client docker-client-latest docker-common docker-latest docker-latest-logrotate docker-logrotate docker-engine podman runc > null
+			yum install -y yum-utils
+			yum-config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+			yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+			systemctl start docker
+			systemctl enable docker
+		else
+			echo ""
+			echo "Your operating system does not allow Docker CE installation."
+			echo "You can install Docker EE using the manual here - https://docs.docker.com/engine/installation/linux/rhel/"
+			echo ""
+			exit 1
+		fi
 
 	elif [ "${DIST}" == "SuSe" ]; then
 
@@ -988,35 +1051,13 @@ get_available_version () {
 		TAGS_RESP=$(curl -s -H "$AUTH_HEADER" -X GET https://$HUB/v2/$REPO/tags/list);
 		TAGS_RESP=$(echo $TAGS_RESP | jq -r '.tags')
 	else
-		if [[ -n ${USERNAME} && -n ${PASSWORD} ]]; then
-			CREDENTIALS="{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}";
-		fi
-
-		if [[ -n ${CREDENTIALS} ]]; then
-			LOGIN_RESP=$(curl -s -H "Content-Type: application/json" -X POST -d "$CREDENTIALS" https://hub.docker.com/v2/users/login/);
-			TOKEN=$(echo $LOGIN_RESP | jq -r '.token');
-			AUTH_HEADER="Authorization: JWT $TOKEN";
-			sleep 1;
-		fi
-
-		TAGS_RESP=$(curl -s -H "$AUTH_HEADER" -X GET https://hub.docker.com/v2/repositories/$1/tags/);
-		TAGS_RESP=$(echo $TAGS_RESP | jq -r '.results[].name')
+		CREDENTIALS=${USERNAME:+${PASSWORD:+-u ${USERNAME}:${PASSWORD}}}
+		TOKEN=$(curl -fs ${CREDENTIALS} "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${1}:pull" | jq -r .token)
+		TAGS_RESP=$(curl -s -H "Authorization: Bearer ${TOKEN}" -X GET https://registry-1.docker.io/v2/$1/tags/list | jq -r '.tags | .[-100:] | .[]')
 	fi
 
-	VERSION_REGEX_1="[0-9]+\.[0-9]+\.[0-9]+"
-	VERSION_REGEX_2="[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"
-	TAG_LIST=""
-
-	for item in $TAGS_RESP
-	do
-		if [[ $item =~ $VERSION_REGEX_1 ]] || [[ $item =~ $VERSION_REGEX_2 ]]; then
-			TAG_LIST="$item,$TAG_LIST"
-		fi
-	done
-
-	LATEST_TAG=$(echo $TAG_LIST | tr ',' '\n' | sort -t. -k 1,1n -k 2,2n -k 3,3n -k 4,4n | awk '/./{line=$0} END{print line}');
-
-	echo "$LATEST_TAG" | sed "s/\"//g"
+	VERSION_REGEX='^[0-9]+\.[0-9]+(\.[0-9]+){0,2}$'
+	echo $(printf "%s\n" "${TAGS_RESP[@]}" | grep -E "$VERSION_REGEX" | sort -V | tail -n 1)
 }
 
 get_current_image_name () {
