@@ -54,23 +54,6 @@ if [ "$SKIP_HARDWARE_CHECK" != "true" ]; then
 	check_hardware
 fi
 
-hold_package_version() {
-	packages=("mono-complete" "mono-webserver-hyperfastcgi" "dotnet-*" "aspnetcore-*" elasticsearch redis-server rabbitmq-server )
-
-	UNATTENDED_UPGRADES_FILE="/etc/apt/apt.conf.d/50unattended-upgrades"
-	if [ -f ${UNATTENDED_UPGRADES_FILE} ] && grep -q "Package-Blacklist" ${UNATTENDED_UPGRADES_FILE}; then
-		for package in "${packages[@]}"; do 
-			if ! grep -q "$package" ${UNATTENDED_UPGRADES_FILE}; then
-				sed -i "/Package-Blacklist/a \\\t\"$package\";" ${UNATTENDED_UPGRADES_FILE}
-			fi
-		done
-		
-		if systemctl list-units --type=service --state=running | grep -q "unattended-upgrades"; then
-			systemctl restart unattended-upgrades
-		fi
-	fi
-}
-
 REV=`cat /etc/debian_version`
 DIST='Debian'
 if [ -f /etc/lsb-release ] ; then
