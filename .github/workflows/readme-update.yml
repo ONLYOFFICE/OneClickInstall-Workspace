@@ -43,6 +43,7 @@ jobs:
             !in_block {print}
           ' README.md > README.new \
           && mv README.new README.md
+          rm os_block.tmp
 
       - name: Commit changes (if any)
         working-directory: ${{ github.event.repository.name }}
