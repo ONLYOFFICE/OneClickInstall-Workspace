@@ -29,19 +29,19 @@ and combines them with collaboration tools for tasks, projects, and team communi
 Community Edition (default):
 
 ```bash
-curl -O https://download.onlyoffice.com/workspace/workspace-install.sh
+curl -O https://download.onlyoffice.com/install/workspace-install.sh
 ```
 
 If you want to install a different edition, choose one of the following:
 
 > **Enterprise Edition**
 > ```bash
-> curl -O https://download.onlyoffice.com/workspace/workspace-enterprise-install.sh
+> curl -O https://download.onlyoffice.com/install/workspace-enterprise-install.sh
 > ```
 
 > **Groups** (Community Server only)
 > ```bash
-> curl -O https://download.onlyoffice.com/workspace/groups-install.sh
+> curl -O https://download.onlyoffice.com/install/groups-install.sh
 > ```
 
 ### 2. Run the script
