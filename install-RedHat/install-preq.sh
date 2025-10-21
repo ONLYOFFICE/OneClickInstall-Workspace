@@ -64,9 +64,10 @@ fi
 yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$REV.noarch.rpm || true
 yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$REV.noarch.rpm || true
 
+EPEL_URL="https://dl.fedoraproject.org/pub/epel/"
 if [ "$DIST" = "redhat" ]; then 
 	LADSPA_PACKAGE_VERSION=$(curl -fsSL "${EPEL_URL}/10/Everything/x86_64/Packages/l/" | grep -oP 'ladspa-[0-9].*?\.rpm' | sort -V | tail -n 1)
-	${package_manager} install -y "${EPEL_URL}/10/Everything/x86_64/Packages/l/${LADSPA_PACKAGE_VERSION}"
+	yum install -y "${EPEL_URL}/10/Everything/x86_64/Packages/l/${LADSPA_PACKAGE_VERSION}"
 fi
 
 if [ "$REV" = "9" ]; then
