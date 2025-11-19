@@ -2126,12 +2126,12 @@ pull_image () {
 		exit 1;
 	fi
 
-	EXIST=$(docker images | grep "$IMAGE_NAME" | awk '{print $2;}' | { grep -x "$IMAGE_VERSION" || true; });
+	EXIST=$(docker images --format "{{.Repository}}:{{.Tag}}" | { grep -x "${IMAGE_NAME}:${IMAGE_VERSION}" || true; });
 	COUNT=1;
 
 	while [[ -z $EXIST && $COUNT -le 3 ]]; do
 		docker pull ${IMAGE_NAME}:${IMAGE_VERSION}
-		EXIST=$(docker images | grep "$IMAGE_NAME" | awk '{print $2;}' | { grep -x "$IMAGE_VERSION" || true; });
+		EXIST=$(docker images --format "{{.Repository}}:{{.Tag}}" | { grep -x "${IMAGE_NAME}:${IMAGE_VERSION}" || true; });
 		(( COUNT++ ))
 	done
 
