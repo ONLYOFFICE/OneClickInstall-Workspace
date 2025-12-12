@@ -145,22 +145,18 @@ echo mysql-community-server mysql-server/default-auth-override select "Use Stron
 echo mysql-server-8.0 mysql-server/root_password password ${MYSQL_SERVER_PASS} | debconf-set-selections
 echo mysql-server-8.0 mysql-server/root_password_again password ${MYSQL_SERVER_PASS} | debconf-set-selections
 
-# Temporary fix MySQL repo GPG key expired
-if [ -f "/etc/apt/sources.list.d/mysql.list" ]; then
-	sed -i -E '/repo\.mysql\.com/ s/\[signed-by=/[trusted=yes signed-by=/' /etc/apt/sources.list.d/mysql.list
-fi
-
-apt-get -y update
 elif dpkg -l | grep -q "mysql-apt-config" && [ "$(apt-cache policy mysql-apt-config | awk 'NR==2{print $2}')" != "${MYSQL_REPO_VERSION}" ]; then
 	curl -OL http://repo.mysql.com/${MYSQL_PACKAGE_NAME}
 	DEBIAN_FRONTEND=noninteractive dpkg -i ${MYSQL_PACKAGE_NAME}
 	rm -f ${MYSQL_PACKAGE_NAME}
-	# Temporary fix MySQL repo GPG key expired
-	if [ -f "/etc/apt/sources.list.d/mysql.list" ]; then
-		sed -i -E '/repo\.mysql\.com/ s/\[signed-by=/[trusted=yes signed-by=/' /etc/apt/sources.list.d/mysql.list
-	fi
-	apt-get -y update
 fi
+
+# fix Bug 77825 - MySQL repo GPG key expired
+if [ -f "/etc/apt/sources.list.d/mysql.list" ]; then
+	sed -E -i 's/\[trusted=(no|yes) /\[trusted=yes /; /\[trusted=yes /! s/\[signed-by=(.*)\]/[trusted=yes signed-by=\1]/; s/^(deb-src)/#\1/' /etc/apt/sources.list.d/mysql.list
+fi
+
+apt-get -y update
 
 CURRENT_MYSQL_VERSION=$(dpkg-query -W -f='${Version}' "mysql-client" || true) 
 AVAILABLE_MYSQL_VERSION=$(apt-cache policy "mysql-client" | awk 'NR==3{print $2}')
