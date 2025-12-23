@@ -122,7 +122,7 @@ fi
 # setup msttcorefonts
 echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
 
-MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP 'mysql-apt-config_\K.*' | grep -o '^[^_]*' | sort --version-sort --field-separator=. | tail -n1)"
+MYSQL_REPO_VERSION="$(curl https://dev.mysql.com/downloads/repo/apt/ | grep -oP '(?<=mysql-apt-config_)[0-9.]+-[0-9]+(?=_all\.deb)' | head -n1)"
 MYSQL_PACKAGE_NAME="mysql-apt-config_${MYSQL_REPO_VERSION}_all.deb"
 if ! dpkg -l | grep -q "mysql-server"; then
 
@@ -212,7 +212,7 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				python3-pip \
 				nginx-extras \
 				expect \
-				dotnet-sdk-8.0
+				dotnet-sdk-7.0
 
 if apt-cache search --names-only '^ffmpeg$' | grep -q "ffmpeg"; then
 	apt-get install -yq ffmpeg
@@ -238,5 +238,3 @@ if which apparmor_parser && [ ! -f /etc/apparmor.d/disable/usr.sbin.mysqld ] && 
 	ln -sf /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/;
 	apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld;
 fi
-
-hold_package_version
