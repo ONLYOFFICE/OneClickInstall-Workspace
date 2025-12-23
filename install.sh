@@ -1051,35 +1051,13 @@ get_available_version () {
 		TAGS_RESP=$(curl -s -H "$AUTH_HEADER" -X GET https://$HUB/v2/$REPO/tags/list);
 		TAGS_RESP=$(echo $TAGS_RESP | jq -r '.tags')
 	else
-		if [[ -n ${USERNAME} && -n ${PASSWORD} ]]; then
-			CREDENTIALS="{\"username\":\"$USERNAME\",\"password\":\"$PASSWORD\"}";
-		fi
-
-		if [[ -n ${CREDENTIALS} ]]; then
-			LOGIN_RESP=$(curl -s -H "Content-Type: application/json" -X POST -d "$CREDENTIALS" https://hub.docker.com/v2/users/login/);
-			TOKEN=$(echo $LOGIN_RESP | jq -r '.token');
-			AUTH_HEADER="Authorization: JWT $TOKEN";
-			sleep 1;
-		fi
-
-		TAGS_RESP=$(curl -s -H "$AUTH_HEADER" -X GET https://hub.docker.com/v2/repositories/$1/tags/);
-		TAGS_RESP=$(echo $TAGS_RESP | jq -r '.results[].name')
+		CREDENTIALS=${USERNAME:+${PASSWORD:+-u ${USERNAME}:${PASSWORD}}}
+		TOKEN=$(curl -fs ${CREDENTIALS} "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${1}:pull" | jq -r .token)
+		TAGS_RESP=$(curl -s -H "Authorization: Bearer ${TOKEN}" -X GET https://registry-1.docker.io/v2/$1/tags/list | jq -r '.tags | .[-100:] | .[]')
 	fi
 
-	VERSION_REGEX_1="[0-9]+\.[0-9]+\.[0-9]+"
-	VERSION_REGEX_2="[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"
-	TAG_LIST=""
-
-	for item in $TAGS_RESP
-	do
-		if [[ $item =~ $VERSION_REGEX_1 ]] || [[ $item =~ $VERSION_REGEX_2 ]]; then
-			TAG_LIST="$item,$TAG_LIST"
-		fi
-	done
-
-	LATEST_TAG=$(echo $TAG_LIST | tr ',' '\n' | sort -t. -k 1,1n -k 2,2n -k 3,3n -k 4,4n | awk '/./{line=$0} END{print line}');
-
-	echo "$LATEST_TAG" | sed "s/\"//g"
+	VERSION_REGEX='^[0-9]+\.[0-9]+(\.[0-9]+){0,2}$'
+	echo $(printf "%s\n" "${TAGS_RESP[@]}" | grep -E "$VERSION_REGEX" | sort -V | tail -n 1)
 }
 
 get_current_image_name () {
