@@ -1268,6 +1268,7 @@ install_document_server () {
 	if [ "$RUN_DOCUMENT_SERVER" == "true" ]; then
 		args=();
 		args+=(--name "$DOCUMENT_CONTAINER_NAME");
+		args+=(--expose 8000);
 
 		if [ "${USE_AS_EXTERNAL_SERVER}" == "true" ]; then
 			args+=(-p 80:80);
