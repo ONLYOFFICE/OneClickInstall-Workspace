@@ -1299,7 +1299,8 @@ install_document_server () {
 			COMMUNITY_SERVER_ID=$(get_container_id "$COMMUNITY_CONTAINER_NAME");
 
 			if [[ -n ${COMMUNITY_SERVER_ID} ]]; then
-				docker exec ${COMMUNITY_CONTAINER_NAME} chown -R ${PRODUCT}:${PRODUCT} /var/www/${PRODUCT}/DocumentServerData
+				DOCUMENT_SERVER_UID=$(docker exec ${DOCUMENT_CONTAINER_NAME} id -u ds)
+				docker exec ${COMMUNITY_CONTAINER_NAME} chown -R ${DOCUMENT_SERVER_UID}:${PRODUCT} /var/www/${PRODUCT}/DocumentServerData
 			fi
 		fi
 	fi
