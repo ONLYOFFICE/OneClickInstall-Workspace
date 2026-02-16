@@ -1460,9 +1460,9 @@ install_elasticsearch () {
 		
 		MEMORY_REQUIREMENTS=12228; #RAM ~12Gb
 		if [ ${TOTAL_MEMORY} -gt ${MEMORY_REQUIREMENTS} ]; then
-			args+=(-e "ES_JAVA_OPTS=-Xms4g -Xmx4g -Dlog4j2.formatMsgNoLookups=true");
+			args+=(-e "ES_JAVA_OPTS=-Xms4g -Xmx4g -Dlog4j2.formatMsgNoLookups=true -XX:-UseContainerSupport");
 		else
-			args+=(-e "ES_JAVA_OPTS=-Xms1g -Xmx1g -Dlog4j2.formatMsgNoLookups=true");
+			args+=(-e "ES_JAVA_OPTS=-Xms1g -Xmx1g -Dlog4j2.formatMsgNoLookups=true -XX:-UseContainerSupport");
 		fi
 
 		args+=(-e "indices.fielddata.cache.size=30%");
