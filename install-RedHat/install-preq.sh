@@ -180,6 +180,7 @@ fi
 
 yum -y install epel-release \
 			python3 \
+			python3-pip \
 			${RADICALE_PACKAGE} \
 			expect \
 			nano \
@@ -206,10 +207,6 @@ yum -y install epel-release \
 yum versionlock mono-complete
 rpm -q elasticsearch || yum install -y elasticsearch-7.16.3-1
 command -v god &>/dev/null || gem install --bindir /usr/bin $(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"') --no-document
-
-PY3_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'); PIP_URL="https://bootstrap.pypa.io/pip"
-PIP_FILE=$(curl --head --silent --fail ${PIP_URL}/${PY3_VER}/get-pip.py > /dev/null && echo ${PIP_URL}/${PY3_VER}/get-pip.py || echo ${PIP_URL}/get-pip.py)
-curl -sSL ${PIP_FILE} | python3
 
 if ! command -v certbot &>/dev/null; then
   if yum list available certbot &>/dev/null; then
