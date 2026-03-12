@@ -174,8 +174,13 @@ fi
 yum -y install python3-dnf-plugin-versionlock || yum -y install yum-plugin-versionlock
 yum versionlock clear
 
+if [ "$REV" = "9" ]; then
+    RADICALE_PACKAGE=python3-radicale3
+fi
+
 yum -y install epel-release \
 			python3 \
+			${RADICALE_PACKAGE} \
 			expect \
 			nano \
 			htop \
