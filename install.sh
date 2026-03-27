@@ -1464,6 +1464,7 @@ install_elasticsearch () {
 		else
 			args+=(-e "ES_JAVA_OPTS=-Xms1g -Xmx1g -Dlog4j2.formatMsgNoLookups=true -XX:-UseContainerSupport");
 		fi
+		args+=(-e "JDK_JAVA_OPTIONS=-XX:-UseContainerSupport");
 
 		args+=(-e "indices.fielddata.cache.size=30%");
 		args+=(-e "indices.memory.index_buffer_size=30%");
