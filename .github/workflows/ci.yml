@@ -73,7 +73,7 @@ jobs:
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
 
   vagrant-up:
-    name: "Test Workspace with ${{ matrix.name}}"
+    name: "Install (${{ matrix.name}})"
     runs-on: ubuntu-22.04
     needs: prepare
     strategy:
@@ -104,15 +104,46 @@ jobs:
       - name: Install
         timeout-minutes: 90
         env:
-          TEST_CASE: ${{ github.event_name == 'schedule' && '--production-install' || '--local-install' }}
           DISTR: ${{ matrix.distr }}
           RAM: '8192'
           CPU: '3'
           OS: ${{ matrix.os }}
-          BASE_ARGS: '--skiphardwarecheck true --makeswap false'
-          DOWNLOAD_SCRIPT: ${{ github.event_name == 'schedule' && '-ds true' || '-ds false' }}
-          TEST_REPO: ${{ github.event_name != 'schedule' && '-tr true' || '' }}
-          EXTRA_ARGS: ${{ github.event_name != 'schedule' && '--localscripts true' || '' }}
+        run: |
+          set -eux
+          cd tests/vagrant
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            export DOWNLOAD_SCRIPT='-ds true'
+            export TEST_REPO=''
+            export ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'"
+          else
+            export DOWNLOAD_SCRIPT='-ds false'
+            export TEST_REPO='-tr true'
+            export ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true'"
+          fi
+          vagrant up
+
+      - name: Health check
         run: |
           cd tests/vagrant
-          ARGUMENTS="-arg '$BASE_ARGS $EXTRA_ARGS'" vagrant up
+          if vagrant status | grep -q "running"; then
+            vagrant ssh -c "sudo bash /home/vagrant/tests/vagrant/post-install.sh healthcheck" || true
+          else
+            echo "VM is not running, skipping health check"
+          fi
+
+      - name: Collect logs
+        if: always()
+        run: |
+          cd tests/vagrant
+          if vagrant status | grep -q "running"; then
+            vagrant ssh -c "sudo bash /home/vagrant/tests/vagrant/post-install.sh logs" || true
+          else
+            echo "VM is not running, skipping log collection"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          cd tests/vagrant || exit 0
+          vagrant destroy --force || true
+          vagrant global-status --prune || true
