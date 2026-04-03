@@ -16,31 +16,31 @@ yum clean all
 yum -y install yum-utils
 
 DIST=$(rpm -q --whatprovides redhat-release || rpm -q --whatprovides centos-release);
-DIST=$(echo $DIST | sed -n '/-.*/s///p');
+DIST=$(echo "$DIST" | sed -n '/-.*/s///p');
 REV=$(cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//);
 REV_PARTS=(${REV//\./ });
 REV=${REV_PARTS[0]};
 MONOREV=$REV
 
 { yum check-update postgresql; PSQLExitCode=$?; } || true 
-{ yum check-update $DIST*-release; exitCode=$?; } || true #Checking for distribution update
+{ yum check-update "$DIST"*-release; exitCode=$?; } || true #Checking for distribution update
 
 UPDATE_AVAILABLE_CODE=100
 if [[ $exitCode -eq $UPDATE_AVAILABLE_CODE ]]; then
 	res_unsupported_version
-	echo $RES_UNSPPORTED_VERSION
-	echo $RES_SELECT_INSTALLATION
-	echo $RES_ERROR_REMINDER
-	echo $RES_QUESTIONS
+	echo "$RES_UNSPPORTED_VERSION"
+	echo "$RES_SELECT_INSTALLATION"
+	echo "$RES_ERROR_REMINDER"
+	echo "$RES_QUESTIONS"
 	if read_continue_installation; then
-		yum -y install $DIST*-release
+		yum -y install "$DIST"*-release
 	else
 		exit 0;
 	fi
 fi
 
-if rpm -qa | grep mariadb.*config >/dev/null 2>&1; then
-   echo $RES_MARIADB && exit 0
+if rpm -qa | grep 'mariadb.*config' | grep -v 'connector' >/dev/null 2>&1; then
+   echo "$RES_MARIADB" && exit 0
 fi 
 
 if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
@@ -64,25 +64,26 @@ yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-$REV.no
 yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$REV.noarch.rpm || true
 
 if [[ "$DIST" == "redhat" && "$REV" -ge 9 ]]; then
-    LADSPA_PACKAGE_VERSION=$(curl -s "https://mirror.stream.centos.org/9-stream/CRB/$(arch)/os/Packages/" | grep -oP 'ladspa-[0-9][^"< ]+\.rpm' | sort -V | tail -n 1)
+    LADSPA_PACKAGE_VERSION=$(curl -fsSL "https://mirror.stream.centos.org/9-stream/CRB/$(arch)/os/Packages/" | grep -oP 'ladspa-[0-9][^"< ]+\.rpm' | sort -V | tail -n 1)
     ${package_manager} install -y "https://mirror.stream.centos.org/9-stream/CRB/$(arch)/os/Packages/${LADSPA_PACKAGE_VERSION}"
 fi
 
 if [ "$REV" = "10" ]; then
-	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"};
-	REV="9" && MONOREV="8"
+	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
+	REV="9"
+	MONOREV="8"
 	REDIS_PACKAGE=valkey
 	FFMPEG_PACKAGE=ffmpeg-free
-	YUM_EXTRA_PARAMS="--nogpgcheck";
+	YUM_EXTRA_PARAMS="--nogpgcheck"
 elif [ "$REV" = "9" ]; then
-	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"};
+	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
 	MONOREV="8"
-	[ $DIST != "redhat" ] && TESTING_REPO="--enablerepo=crb" || /usr/bin/crb enable
+	[ "$DIST" != "redhat" ] && TESTING_REPO="--enablerepo=crb" || /usr/bin/crb enable
 	update-crypto-policies --set DEFAULT:SHA1
 	yum -y install xorg-x11-font-utils
 elif [ "$REV" = "8" ]; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"};
-	[ $DIST != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
+	[ "$DIST" != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
 elif [ "$REV" = "7" ] ; then
 	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-6"};
 fi
@@ -91,15 +92,15 @@ REDIS_PACKAGE=${REDIS_PACKAGE:-redis}
 FFMPEG_PACKAGE=${FFMPEG_PACKAGE:-ffmpeg}
 
 #add rabbitmq & erlang repo
-curl -s https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
-curl -s https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$REV bash
+curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
+curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$REV bash
 
 if rpm -q rabbitmq-server; then
 	if [ "$(yum list installed rabbitmq-server | awk '/rabbitmq-server/ {gsub(/@/, "", $NF); print $NF}')" != "$(repoquery rabbitmq-server --qf='%{repoid}' | tail -n 1)" ]; then
 		res_rabbitmq_update
-		echo $RES_RABBITMQ_VERSION
-		echo $RES_RABBITMQ_REMINDER
-		echo $RES_RABBITMQ_INSTALLATION
+		echo "$RES_RABBITMQ_VERSION"
+		echo "$RES_RABBITMQ_REMINDER"
+		echo "$RES_RABBITMQ_INSTALLATION"
 		if read_continue_installation; then
 			rm -rf /var/lib/rabbitmq/mnesia/$(rabbitmqctl eval "node().")
 			yum -y remove rabbitmq-server erlang* 
@@ -111,7 +112,7 @@ if rpm -q rabbitmq-server; then
 fi
 
 #add dotnet repo
-if [ $REV = "7" ] || [[ $DIST != "redhat" && $REV = "8" ]]; then
+if [ "$REV" = "7" ] || [[ $DIST != "redhat" && $REV = "8" ]]; then
 	rpm -Uvh https://packages.microsoft.com/config/centos/$REV/packages-microsoft-prod.rpm || true
 elif rpm -q packages-microsoft-prod; then
 	yum remove -y packages-microsoft-prod dotnet*
@@ -130,12 +131,12 @@ END
 
 #add mysql repo
 [ "$REV" != "7" ] && dnf remove -y @mysql && dnf module -y reset mysql && dnf module -y disable mysql
-MYSQL_REPO_VERSION="$(curl https://repo.mysql.com | grep -oP "mysql84-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | sort -n | tail -n1)"
+MYSQL_REPO_VERSION="$(curl -fsSL https://repo.mysql.com | grep -oP "mysql84-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | sort -n | tail -n1)"
 yum localinstall -y https://repo.mysql.com/mysql84-community-release-el${REV}-${MYSQL_REPO_VERSION}.noarch.rpm || true
 
 #add mono repo
 rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF" || true
-su -c "curl https://download.mono-project.com/repo/centos$MONOREV-stable.repo | tee /etc/yum.repos.d/mono-centos$MONOREV-stable.repo"
+curl -fsSL https://download.mono-project.com/repo/centos$MONOREV-stable.repo | tee /etc/yum.repos.d/mono-centos$MONOREV-stable.repo
 
 # add elasticsearch repo
 if [ -z "$ELASTICSEARCH_REPOSITORY" ]; then
@@ -155,7 +156,7 @@ fi
 cat > /etc/yum.repos.d/nginx.repo <<END
 [nginx-stable]
 name=nginx stable repo
-baseurl=http://nginx.org/packages/centos/$REV/\$basearch/
+baseurl=https://nginx.org/packages/centos/$REV/\$basearch/
 gpgcheck=1
 enabled=1
 gpgkey=https://nginx.org/keys/nginx_signing.key
@@ -167,7 +168,7 @@ curl -fsSL https://rpm.nodesource.com/setup_16.x | sed '/update -y\|sleep/d' | b
 
 if ! rpm -q mysql-community-server; then
 	MYSQL_FIRST_TIME_INSTALL="true";
-elif rpm -q mysql-community-server && [ "$UPDATE" = "true" ]; then
+elif [ "$UPDATE" = "true" ]; then
 	rpm --import https://repo.mysql.com/RPM-GPG-KEY-mysql-2022
 fi
 
@@ -201,7 +202,7 @@ yum -y install epel-release \
 			
 yum versionlock mono-complete
 rpm -q elasticsearch || yum install -y elasticsearch-7.16.3-1
-command -v god &>/dev/null || gem install --bindir /usr/bin $(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"') --no-document
+command -v god &>/dev/null || gem install --bindir /usr/bin "$(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"')" --no-document
 
 if ! command -v certbot &>/dev/null; then
   if yum list available certbot &>/dev/null; then
@@ -213,8 +214,12 @@ if ! command -v certbot &>/dev/null; then
   fi
 fi
 			
-[[ $PSQLExitCode -eq $UPDATE_AVAILABLE_CODE ]] && yum -y install postgresql-upgrade && postgresql-setup --upgrade || true
-postgresql-setup initdb	|| true
+if [[ $PSQLExitCode -eq $UPDATE_AVAILABLE_CODE ]]; then
+	yum -y install postgresql-upgrade 
+	postgresql-setup --upgrade || true
+fi
+postgresql-setup --initdb || true
+
 sed -E -i "s/(host\s+(all|replication)\s+all\s+(127\.0\.0\.1\/32|\:\:1\/128)\s+)(ident|trust|md5)/\1scram-sha-256/" /var/lib/pgsql/data/pg_hba.conf
 sed -i "s/^#\?password_encryption = .*/password_encryption = 'scram-sha-256'/" /var/lib/pgsql/data/postgresql.conf
 

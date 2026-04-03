@@ -14,7 +14,7 @@ rm -f /etc/apt/sources.list.d/builds-ubuntu-sphinxsearch-rel22-bionic.list
 rm -f /etc/apt/sources.list.d/certbot-ubuntu-certbot-bionic.list
 rm -f /etc/apt/sources.list.d/mono-official.list
 
-if [ "$DIST" = "debian" ] && [ $(apt-cache search ttf-mscorefonts-installer | wc -l) -eq 0 ]; then
+if [ "$DIST" = "debian" ] && [ "$(apt-cache search ttf-mscorefonts-installer | wc -l)" -eq 0 ]; then
 		echo "deb http://ftp.uk.debian.org/debian/ $DISTRIB_CODENAME main contrib" >> /etc/apt/sources.list
 		echo "deb-src http://ftp.uk.debian.org/debian/ $DISTRIB_CODENAME main contrib" >> /etc/apt/sources.list
 fi
@@ -36,7 +36,7 @@ fi
 locale-gen en_US.UTF-8
 
 #Fix kinetic dependencies
-if [ "$DISTRIB_CODENAME" = "jammy" ] && [ $(apt-cache search "libevent-2.1-7$" | wc -l) -eq 0 ]; then
+if [ "$DISTRIB_CODENAME" = "jammy" ] && [ "$(apt-cache search 'libevent-2.1-7$' | wc -l)" -eq 0 ]; then
     echo "deb [signed-by=/etc/apt/trusted.gpg.d/ubuntu-keyring-2018-archive.gpg] http://archive.ubuntu.com/ubuntu/ $DISTRIB_CODENAME main" | tee /etc/apt/sources.list.d/$DISTRIB_CODENAME.list
     apt-get update && apt-get install -yq libevent-2.1-7
     rm -f /etc/apt/sources.list.d/$DISTRIB_CODENAME.list
@@ -50,7 +50,6 @@ echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://downl
 
 gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 chmod 644 /usr/share/keyrings/mono-official-stable.gpg
-mono_complete_package_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
 if [[ "$DISTRIB_CODENAME" =~ ^(focal|bullseye|jammy|bookworm|noble)$ ]]; then
 	echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu focal main" | tee /etc/apt/sources.list.d/mono-extra.list  
@@ -67,9 +66,8 @@ fi
 curl -fsSL https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --import
 chmod 644 /usr/share/keyrings/mono-extra.gpg
 
-if [ "$DIST" = "ubuntu" ]; then	
-	# add redis repo  --- temporary fix for complete installation on Ubuntu 24.04. REDIS_DIST_CODENAME change to DISTRIB_CODENAME
-	[[ "$DISTRIB_CODENAME" =~ noble ]] && REDIS_DIST_CODENAME="jammy" || REDIS_DIST_CODENAME="${DISTRIB_CODENAME}"
+if [ "$DIST" = "ubuntu" ]; then
+	# add redis repo
 	curl -fsSL https://packages.redis.io/gpg | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/redis.gpg --import
 	echo "deb [signed-by=/usr/share/keyrings/redis.gpg] https://packages.redis.io/deb $DISTRIB_CODENAME main" | tee /etc/apt/sources.list.d/redis.list
 	chmod 644 /usr/share/keyrings/redis.gpg
@@ -82,21 +80,21 @@ fi
 
 #add dotnet repo
 if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
-	curl https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
+	curl -fsSL https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
 elif [ "$DIST" = "ubuntu" ] && [ "$DISTRIB_CODENAME" = "noble" ]; then
 	add-apt-repository -y ppa:dotnet/backports
 elif [ "$DIST" = "debian" ] || [[ "$DISTRIB_CODENAME" =~ ^(bionic|focal)$ ]]; then
-	curl https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
+	curl -fsSL https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
 elif dpkg -l | grep -q packages-microsoft-prod; then
     apt-get purge -y packages-microsoft-prod
 fi
 
 if [ -f "packages-microsoft-prod.deb" ]; then
 	echo -e "Package: *\nPin: origin \"packages.microsoft.com\"\nPin-Priority: 1002" | tee /etc/apt/preferences.d/99microsoft-prod.pref
-	dpkg -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
+	DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
 fi
 
-if [ -z $ELASTICSEARCH_REPOSITORY ]; then
+if [ -z "$ELASTICSEARCH_REPOSITORY" ]; then
 	# add elasticsearch repo
 	curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/elastic-7.x.gpg --import
 	chmod 644 /usr/share/keyrings/elastic-7.x.gpg
@@ -112,7 +110,7 @@ mono_complete_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | s
 
 #add nginx repo
 if [[ "$DISTRIB_CODENAME" != noble ]]; then
-	curl -s http://nginx.org/keys/nginx_signing.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nginx.gpg --import
+	curl -fsSL http://nginx.org/keys/nginx_signing.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nginx.gpg --import
 	chmod 644 /usr/share/keyrings/nginx.gpg
 	echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/$DIST/ $DISTRIB_CODENAME nginx" | tee /etc/apt/sources.list.d/nginx.list
 	#Temporary fix for missing nginx repository for debian bookworm
@@ -147,7 +145,7 @@ echo mysql-server mysql-server/root_password password "${MYSQL_SERVER_PASS}" | d
 echo mysql-server mysql-server/root_password_again password "${MYSQL_SERVER_PASS}" | debconf-set-selections
 
 elif dpkg -l | grep -q "mysql-apt-config" && [ "$(apt-cache policy mysql-apt-config | awk 'NR==2{print $2}')" != "${MYSQL_REPO_VERSION}" ]; then
-	curl -fsSLO http://repo.mysql.com/${MYSQL_PACKAGE_NAME}
+	curl -fsSLO http://repo.mysql.com/"${MYSQL_PACKAGE_NAME}"
 	DEBIAN_FRONTEND=noninteractive dpkg -i "${MYSQL_PACKAGE_NAME}"
 	rm -f "${MYSQL_PACKAGE_NAME}"
 fi
@@ -186,7 +184,7 @@ if apt-get install --dry-run ruby-god 2>/dev/null; then
 	apt-get install -yq ruby-god ruby-dev
 else
 	command_exists ruby || apt-get install -yq build-essential libssl-dev libreadline-dev zlib1g-dev ruby-full
-	command_exists god || gem install --bindir /usr/bin $(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"') --no-document
+	command_exists god || gem install --bindir /usr/bin "$(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"')" --no-document
 fi
 
 # install
@@ -214,7 +212,7 @@ if apt-cache search --names-only '^ffmpeg$' | grep -q "ffmpeg"; then
 	apt-get install -yq ffmpeg
 fi
 	
-if ! dpkg -s syslog-ng; then
+if ! dpkg -s syslog-ng &>/dev/null; then
 	apt-get install -yq rsyslog
 fi
 		
@@ -230,9 +228,9 @@ if ! dpkg -l | grep -q "elasticsearch"; then
 fi
 
 # disable apparmor for mysql
-if which apparmor_parser && [ ! -f /etc/apparmor.d/disable/usr.sbin.mysqld ] && [ -f /etc/apparmor.d/disable/usr.sbin.mysqld ]; then
-	ln -sf /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/;
-	apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld;
+if which apparmor_parser && [ ! -f /etc/apparmor.d/disable/usr.sbin.mysqld ] && [ -f /etc/apparmor.d/usr.sbin.mysqld ]; then
+	ln -sf /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
+	apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
 fi
 
 hold_package_version
