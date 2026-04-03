@@ -1,4 +1,4 @@
-name: Install Workspace Docker
+name: Install OCI Docker
 
 on:
   schedule:

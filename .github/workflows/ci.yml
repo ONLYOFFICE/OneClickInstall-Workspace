@@ -1,4 +1,4 @@
-name: Installation test OneClickInstall-Workspace
+name: Install OCI Workspace
 
 on:
   schedule:
@@ -6,21 +6,21 @@ on:
 
   workflow_dispatch:
     inputs:
+      centos8s:
+        type: boolean
+        description: 'CentOS 8S'
+        default: true
       rhel9:
         type: boolean
         description: 'RHEL 9'
         default: true
-      centos8s:
-        type: boolean
-        description: 'CentOS 8 Stream'
-        default: true
       centos9s:
         type: boolean
-        description: 'CentOS 9 Stream'
+        description: 'CentOS 9S'
         default: true
-      debian10:
+      centos10:
         type: boolean
-        description: 'Debian 10'
+        description: 'CentOS 10'
         default: true
       debian11:
         type: boolean
@@ -30,9 +30,9 @@ on:
         type: boolean
         description: 'Debian 12'
         default: true
-      ubuntu2004:
+      debian13:
         type: boolean
-        description: 'Ubuntu 20.04'
+        description: 'Debian 13'
         default: true
       ubuntu2204:
         type: boolean
@@ -59,13 +59,13 @@ jobs:
         run: |
           matrix=$(echo '{
             "include": [
-              {"execute": '${{ github.event.inputs.rhel9 || true }}', "name": "RHEL 9", "os": "rhel9", "distr": "generic"},
-              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS 8 Stream", "os": "base-centos8s", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.centos9s || true }}', "name": "CentOS 9 Stream", "os": "base-centos9s", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.debian10 || true }}', "name": "Debian 10", "os": "base-debian10", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS 8S", "os": "base-centos8s", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.centos9s || true }}', "name": "CentOS 9S", "os": "base-centos9s", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.rhel9    || true }}', "name": "RHEL 9",    "os": "rhel9",         "distr": "generic"},
+              {"execute": '${{ github.event.inputs.centos10 || true }}', "name": "CentOS 10", "os": "base-centos10", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.debian11 || true }}', "name": "Debian 11", "os": "base-debian11", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.debian12 || true }}', "name": "Debian 12", "os": "base-debian12", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.ubuntu2004 || true }}', "name": "Ubuntu 20.04", "os": "base-ubuntu2004", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.debian13 || true }}', "name": "Debian 13", "os": "base-debian13", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.ubuntu2204 || true }}', "name": "Ubuntu 22.04", "os": "base-ubuntu2204", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.ubuntu2404 || true }}', "name": "Ubuntu 24.04", "os": "base-ubuntu2404", "distr": "onlyoffice"}
             ]
@@ -101,51 +101,18 @@ jobs:
           # Temporary install VBox 7.1.12 via curl (.deb) to avoid SSH/NAT issues in 7.1.14
           curl -fsSL "https://download.virtualbox.org/virtualbox/7.1.12/$(curl -fsSL https://download.virtualbox.org/virtualbox/7.1.12/MD5SUMS | grep -oE 'virtualbox-7\.1_7\.1\.12-[0-9]+~Ubuntu~jammy_amd64\.deb' | head -n1)" -o /tmp/vbox.deb && sudo apt-get install -y /tmp/vbox.deb
 
-      - name: Install from production scripts
-        if: ${{ github.event_name == 'schedule' }}
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 2
-          timeout_minutes: 180
-          retry_on: error
-          command: |
-                cd tests/vagrant
-                TEST_CASE='--production-install' \
-                DISTR='${{ matrix.distr }}' \
-                RAM='6100' \
-                CPU='2' \
-                BOX_VER='${{ matrix.box-ver }}' \
-                OS='${{ matrix.os }}' \
-                DOWNLOAD_SCRIPT='-ds true' \
-                ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
-                vagrant up
-          on_retry_command: |
-                echo "RUN CLEAN UP: Destroy vagrant and one more try"
-                cd tests/vagrant
-                sleep 10
-                vagrant destroy --force
-
-      - name: Install from local scripts
-        if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 2
-          timeout_minutes: 180
-          retry_on: error
-          command: |
-                cd tests/vagrant
-                TEST_CASE='--local-install' \
-                DISTR='${{ matrix.distr }}' \
-                RAM='6100' \
-                CPU='2' \
-                BOX_VER='${{ matrix.box-ver }}' \
-                OS='${{ matrix.os }}' \
-                DOWNLOAD_SCRIPT='-ds false' \
-                TEST_REPO='-tr true' \
-                ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true'" \
-                vagrant up
-          on_retry_command: |
-                echo "RUN CLEAN UP: Destroy vagrant and one more try"
-                cd tests/vagrant
-                sleep 10
-                vagrant destroy --force
+      - name: Install
+        timeout-minutes: 90
+        env:
+          TEST_CASE: ${{ github.event_name == 'schedule' && '--production-install' || '--local-install' }}
+          DISTR: ${{ matrix.distr }}
+          RAM: '8192'
+          CPU: '3'
+          OS: ${{ matrix.os }}
+          BASE_ARGS: '--skiphardwarecheck true --makeswap false'
+          DOWNLOAD_SCRIPT: ${{ github.event_name == 'schedule' && '-ds true' || '-ds false' }}
+          TEST_REPO: ${{ github.event_name != 'schedule' && '-tr true' || '' }}
+          EXTRA_ARGS: ${{ github.event_name != 'schedule' && '--localscripts true' || '' }}
+        run: |
+          cd tests/vagrant
+          ARGUMENTS="-arg '$BASE_ARGS $EXTRA_ARGS'" vagrant up

@@ -1,4 +1,4 @@
-name: OneClickTests-Update
+name: Update OCI Workspace
   
 on:
   workflow_dispatch:
@@ -11,10 +11,6 @@ on:
         type: boolean
         description: 'CentOS 9 Stream'
         default: true
-      debian10:
-        type: boolean
-        description: 'Debian 10'
-        default: true
       debian11:
         type: boolean
         description: 'Debian 11'
@@ -22,10 +18,6 @@ on:
       debian12:
         type: boolean
         description: 'Debian 12'
-        default: true
-      ubuntu2004:
-        type: boolean
-        description: 'Ubuntu 20.04'
         default: true
       ubuntu2204:
         type: boolean
