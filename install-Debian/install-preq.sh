@@ -30,7 +30,7 @@ if ! dpkg -l | grep -q "apt-transport-https"; then
 fi
 
 if ! dpkg -l | grep -q "software-properties-common"; then
-	apt-get install -yq software-properties-common
+	apt-get install -yq software-properties-common || true
 fi
 
 locale-gen en_US.UTF-8
