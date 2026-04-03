@@ -45,13 +45,13 @@ fi
 # add mono extra repo
 echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://download.mono-project.com/repo/$DIST stable-$DISTRIB_CODENAME/snapshots/6.8.0.123 main" | tee /etc/apt/sources.list.d/mono-official.list
 #Fix missing repository for $DISTRIB_CODENAME
-[[ "$DISTRIB_CODENAME" =~ ^(bullseye|bookworm)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-buster/g" /etc/apt/sources.list.d/mono-official.list
+[[ "$DISTRIB_CODENAME" =~ ^(bullseye|bookworm|trixie)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-buster/g" /etc/apt/sources.list.d/mono-official.list
 [[ "$DISTRIB_CODENAME" =~ ^(jammy|noble)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-focal/g" /etc/apt/sources.list.d/mono-official.list
 
 gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 chmod 644 /usr/share/keyrings/mono-official-stable.gpg
 
-if [[ "$DISTRIB_CODENAME" =~ ^(focal|bullseye|jammy|bookworm|noble)$ ]]; then
+if [[ "$DISTRIB_CODENAME" =~ ^(focal|bullseye|jammy|bookworm|noble|trixie)$ ]]; then
 	echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu focal main" | tee /etc/apt/sources.list.d/mono-extra.list  
 	hyperfastcgi_version="0.4-8"
 elif [[ "$DISTRIB_CODENAME" =~ ^(bionic|buster)$ ]]; then
@@ -169,7 +169,7 @@ elif [ "$DIST" = "ubuntu" ]; then
 	add-apt-repository -y ppa:certbot/certbot
 	apt-get -y update	
 	apt-get install -yq certbot
-elif [[ "$DISTRIB_CODENAME" =~ ^(stretch|buster|bullseye|bookworm)$ ]]; then
+elif [[ "$DISTRIB_CODENAME" =~ ^(stretch|buster|bullseye|bookworm|trixie)$ ]]; then
 	apt-get install -yq certbot
 elif [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "jessie" ]; then # Debian 8
 	echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie_backports.list
