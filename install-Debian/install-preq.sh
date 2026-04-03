@@ -208,6 +208,9 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				expect \
 				dotnet-sdk-8.0
 
+# Remove default-authentication-plugin from MySQL config — option removed in MySQL 8.4, causes startup failure
+find /etc/mysql -name "*.cnf" -exec sed -i '/^default-authentication-plugin/d' {} \; 2>/dev/null || true
+
 if apt-cache search --names-only '^ffmpeg$' | grep -q "ffmpeg"; then
 	apt-get install -yq ffmpeg
 fi

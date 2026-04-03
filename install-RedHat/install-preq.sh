@@ -202,6 +202,9 @@ yum -y install epel-release \
 			
 yum versionlock mono-complete
 rpm -q elasticsearch || yum install -y elasticsearch-7.16.3-1
+
+# Remove default-authentication-plugin from MySQL config — option removed in MySQL 8.4, causes startup failure
+sed -i '/^default-authentication-plugin/d' /etc/my.cnf /etc/my.cnf.d/*.cnf 2>/dev/null || true
 command -v god &>/dev/null || gem install --bindir /usr/bin "$(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"')" --no-document
 
 if ! command -v certbot &>/dev/null; then
