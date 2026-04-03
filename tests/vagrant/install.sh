@@ -83,7 +83,7 @@ baseurl=http://mirror.stream.centos.org/9-stream/AppStream/x86_64/os/
 enabled=1
 gpgcheck=0
 EOF
-      elif [[ "$ID" == "centos" ]]; then
+      elif [[ "$ID" == "centos" && "$REV" == "8" ]]; then
         sudo sed -i 's|^mirrorlist=|#&|; s|^#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|' /etc/yum.repos.d/CentOS-*
       fi
       [[ "${TEST_REPO_ENABLE}" == 'true' ]] && add_repo_rpm
