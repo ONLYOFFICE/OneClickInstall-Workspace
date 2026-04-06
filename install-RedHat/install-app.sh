@@ -107,7 +107,7 @@ elif [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 	MYSQL_SERVER_PASS=$(grep -oP "Password=[^\";]*" $DIR/web.connections.config | head -1 | cut -d'=' -f2);
 
 	if { [ "$MYSQL_SERVER_HOST" = "localhost" ] || [ "$MYSQL_SERVER_HOST" = "127.0.0.1" ]; } && \
-	   ! mysql -h"$MYSQL_SERVER_HOST" -u"$MYSQL_SERVER_USER" -p"$MYSQL_SERVER_PASS" -e ";" >/dev/null 2>&1; then
+	   mysql -h"$MYSQL_SERVER_HOST" -u"$MYSQL_SERVER_USER" -p"$MYSQL_SERVER_PASS" -e ";" 2>&1 | grep -q "mysql_native_password"; then
 		systemctl stop mysqld || { systemctl kill mysqld; sleep 5; }
 		mysqld --user=mysql --skip-grant-tables --skip-networking &
 		MYSQLD_TMP_PID=$!
