@@ -108,7 +108,7 @@ elif [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 
 	if { [ "$MYSQL_SERVER_HOST" = "localhost" ] || [ "$MYSQL_SERVER_HOST" = "127.0.0.1" ]; } && \
 	   ! mysql -h"$MYSQL_SERVER_HOST" -u"$MYSQL_SERVER_USER" -p"$MYSQL_SERVER_PASS" -e ";" >/dev/null 2>&1; then
-		systemctl stop mysqld
+		systemctl stop mysqld || { systemctl kill mysqld; sleep 5; }
 		mysqld --user=mysql --skip-grant-tables --skip-networking &
 		MYSQLD_TMP_PID=$!
 		for i in $(seq 30); do mysqladmin ping --silent 2>/dev/null && break; sleep 1; done
