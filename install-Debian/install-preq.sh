@@ -10,92 +10,26 @@ cat<<EOF
 
 EOF
 
-rm -f /etc/apt/sources.list.d/builds-ubuntu-sphinxsearch-rel22-bionic.list
-rm -f /etc/apt/sources.list.d/certbot-ubuntu-certbot-bionic.list
-rm -f /etc/apt/sources.list.d/mono-official.list
-
-if [ "$DIST" = "debian" ] && [ "$(apt-cache search ttf-mscorefonts-installer | wc -l)" -eq 0 ]; then
-		echo "deb http://ftp.uk.debian.org/debian/ $DISTRIB_CODENAME main contrib" >> /etc/apt/sources.list
-		echo "deb-src http://ftp.uk.debian.org/debian/ $DISTRIB_CODENAME main contrib" >> /etc/apt/sources.list
-fi
-
-apt-get -y update
-
-if ! command -v locale-gen &> /dev/null; then
-	apt-get install -yq locales
-fi
-
-if ! dpkg -l | grep -q "apt-transport-https"; then
-	apt-get install -yq apt-transport-https
-fi
-
-if ! dpkg -l | grep -q "software-properties-common"; then
-	apt-get install -yq software-properties-common || true
-fi
-
 locale-gen en_US.UTF-8
 
-#Fix kinetic dependencies
-if [ "$DISTRIB_CODENAME" = "jammy" ] && [ "$(apt-cache search 'libevent-2.1-7$' | wc -l)" -eq 0 ]; then
-    echo "deb [signed-by=/etc/apt/trusted.gpg.d/ubuntu-keyring-2018-archive.gpg] http://archive.ubuntu.com/ubuntu/ $DISTRIB_CODENAME main" | tee /etc/apt/sources.list.d/$DISTRIB_CODENAME.list
-    apt-get update && apt-get install -yq libevent-2.1-7
-    rm -f /etc/apt/sources.list.d/$DISTRIB_CODENAME.list
-fi
-
-# add mono extra repo
-echo "deb [signed-by=/usr/share/keyrings/mono-official-stable.gpg] https://download.mono-project.com/repo/$DIST stable-$DISTRIB_CODENAME/snapshots/6.8.0.123 main" | tee /etc/apt/sources.list.d/mono-official.list
-#Fix missing repository for $DISTRIB_CODENAME
-[[ "$DISTRIB_CODENAME" =~ ^(bullseye|bookworm|trixie)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-buster/g" /etc/apt/sources.list.d/mono-official.list
-[[ "$DISTRIB_CODENAME" =~ ^(jammy|noble)$ ]] && sed -i "s/stable-$DISTRIB_CODENAME/stable-focal/g" /etc/apt/sources.list.d/mono-official.list
-
-gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-chmod 644 /usr/share/keyrings/mono-official-stable.gpg
-
-if [[ "$DISTRIB_CODENAME" =~ ^(focal|bullseye|jammy|bookworm|noble|trixie)$ ]]; then
-	echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu focal main" | tee /etc/apt/sources.list.d/mono-extra.list  
-	hyperfastcgi_version="0.4-8"
-elif [[ "$DISTRIB_CODENAME" =~ ^(bionic|buster)$ ]]; then
-	echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu bionic main" | tee /etc/apt/sources.list.d/mono-extra.list  
-	hyperfastcgi_version="0.4-7"
-else
-	echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu xenial main" | tee /etc/apt/sources.list.d/mono-extra.list  
-	hyperfastcgi_version="0.4-6"
-fi
-
-# add mono extra key
-curl -fsSL https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --import
-chmod 644 /usr/share/keyrings/mono-extra.gpg
-
+# add redis repo
 if [ "$DIST" = "ubuntu" ]; then
-	# add redis repo
 	curl -fsSL https://packages.redis.io/gpg | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/redis.gpg --import
 	echo "deb [signed-by=/usr/share/keyrings/redis.gpg] https://packages.redis.io/deb $DISTRIB_CODENAME main" | tee /etc/apt/sources.list.d/redis.list
 	chmod 644 /usr/share/keyrings/redis.gpg
-
-	# ffmpeg
-	if [ "$DISTRIB_CODENAME" = "trusty" ]; then
-		add-apt-repository ppa:mc3man/trusty-media
-	fi		
 fi
 
 #add dotnet repo
-if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
-	curl -fsSL https://packages.microsoft.com/config/$DIST/10/packages-microsoft-prod.deb -O
-elif [ "$DIST" = "ubuntu" ] && [ "$DISTRIB_CODENAME" = "noble" ]; then
-	add-apt-repository -y ppa:dotnet/backports
-elif [ "$DIST" = "debian" ] || [[ "$DISTRIB_CODENAME" =~ ^(bionic|focal)$ ]]; then
+if [ "$DIST" = "debian" ]; then
 	curl -fsSL https://packages.microsoft.com/config/$DIST/$REV/packages-microsoft-prod.deb -O
+	echo -e "Package: *\nPin: origin \"packages.microsoft.com\"\nPin-Priority: 1002" | tee /etc/apt/preferences.d/99microsoft-prod.pref
+	DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
 elif dpkg -l | grep -q packages-microsoft-prod; then
     apt-get purge -y packages-microsoft-prod
 fi
 
-if [ -f "packages-microsoft-prod.deb" ]; then
-	echo -e "Package: *\nPin: origin \"packages.microsoft.com\"\nPin-Priority: 1002" | tee /etc/apt/preferences.d/99microsoft-prod.pref
-	DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
-fi
-
+# add elasticsearch repo
 if [ -z "$ELASTICSEARCH_REPOSITORY" ]; then
-	# add elasticsearch repo
 	curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/elastic-7.x.gpg --import
 	chmod 644 /usr/share/keyrings/elastic-7.x.gpg
 	echo "deb [signed-by=/usr/share/keyrings/elastic-7.x.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-7.x.list
@@ -103,10 +37,6 @@ fi
 
 # add nodejs repo
 curl -fsSL https://deb.nodesource.com/setup_16.x | sed '/sleep/d' | bash -
-
-apt-get update
-
-mono_complete_version=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 
 #add nginx repo
 if [[ "$DISTRIB_CODENAME" != noble ]]; then
@@ -150,34 +80,12 @@ elif dpkg -l | grep -q "mysql-apt-config" && [ "$(apt-cache policy mysql-apt-con
 	rm -f "${MYSQL_PACKAGE_NAME}"
 fi
 
-apt-get -y update
-
-CURRENT_MYSQL_VERSION=$(dpkg-query -W -f='${Version}' "mysql-client" || true) 
-AVAILABLE_MYSQL_VERSION=$(apt-cache policy "mysql-client" | awk 'NR==3{print $2}')
-
-if [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "stretch" ]; then
-	apt-get install -yq mysql-server mysql-client --allow-unauthenticated
-fi
-
-# add certbot repo
-if [ "$DIST" = "ubuntu" ] && [[ "$DISTRIB_CODENAME" =~ ^(focal|jammy|noble)$ ]]; then
-	if ! command_exists snap; then
-		apt-get -y install snapd
-	fi
+# add certbot
+if [ "$DIST" = "ubuntu" ]; then
+	command_exists snap || apt-get -y install snapd
 	snap install --classic certbot
-elif [ "$DIST" = "ubuntu" ]; then
-	add-apt-repository -y ppa:certbot/certbot
-	apt-get -y update	
+else
 	apt-get install -yq certbot
-elif [[ "$DISTRIB_CODENAME" =~ ^(stretch|buster|bullseye|bookworm|trixie)$ ]]; then
-	apt-get install -yq certbot
-elif [ "$DIST" = "debian" ] && [ "$DISTRIB_CODENAME" = "jessie" ]; then # Debian 8
-	echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie_backports.list
-	echo "deb http://www.deb-multimedia.org jessie main non-free" | tee /etc/apt/sources.list.d/deb_multimedia.list
-
-	apt-get -y update
-	apt-get install -yq certbot -t jessie-backports
-	apt-get install -yq deb-multimedia-keyring		
 fi
 
 if apt-get install --dry-run ruby-god 2>/dev/null; then
@@ -187,12 +95,30 @@ else
 	command_exists god || gem install --bindir /usr/bin "$(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"')" --no-document
 fi
 
+# add mono official repo (Debian uses stable-buster, Ubuntu uses stable-focal)
+MONO_DISTRO="stable-buster"; [ "$DIST" = "ubuntu" ] && MONO_DISTRO="stable-focal"
+MONO_OPTS="[signed-by=/usr/share/keyrings/mono-official-stable.gpg]"
+[ "$DISTRIB_CODENAME" = "trixie" ] && MONO_OPTS="[trusted=yes]"  # SHA1 key rejected by Debian 13 sqv
+echo "deb $MONO_OPTS https://download.mono-project.com/repo/$DIST $MONO_DISTRO/snapshots/6.8.0.123 main" | tee /etc/apt/sources.list.d/mono-official.list
+gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF || true
+chmod 644 /usr/share/keyrings/mono-official-stable.gpg
+
+# add mono extra repo (focal works for all supported distros)
+echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu focal main" | tee /etc/apt/sources.list.d/mono-extra.list
+curl -fsSL https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --import
+chmod 644 /usr/share/keyrings/mono-extra.gpg
+
+apt-get update -y
+MONO_COMPLETE_VERSION=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
+CURRENT_MYSQL_VERSION=$(dpkg-query -W -f='${Version}' "mysql-client" || true) 
+AVAILABLE_MYSQL_VERSION=$(apt-cache policy "mysql-client" | awk 'NR==3{print $2}')
+
 # install
 apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				cron \
-				mono-complete=$mono_complete_version \
+				mono-complete=${MONO_COMPLETE_VERSION} \
 				ca-certificates-mono \
-				mono-webserver-hyperfastcgi=$hyperfastcgi_version \
+				mono-webserver-hyperfastcgi=0.4-8 \
 				nodejs \
 				mysql-server \
 				mysql-client \
@@ -214,10 +140,6 @@ find /etc/mysql -name "*.cnf" -exec sed -i '/^default-authentication-plugin/d' {
 if apt-cache search --names-only '^ffmpeg$' | grep -q "ffmpeg"; then
 	apt-get install -yq ffmpeg
 fi
-	
-if ! dpkg -s syslog-ng &>/dev/null; then
-	apt-get install -yq rsyslog
-fi
 		
 if [ -e /etc/redis/redis.conf ]; then
  sed -i "s/bind .*/bind 127.0.0.1/g" /etc/redis/redis.conf
@@ -228,12 +150,6 @@ fi
 	
 if ! dpkg -l | grep -q "elasticsearch"; then
 	apt-get install -yq elasticsearch=7.16.3
-fi
-
-# disable apparmor for mysql
-if which apparmor_parser && [ ! -f /etc/apparmor.d/disable/usr.sbin.mysqld ] && [ -f /etc/apparmor.d/usr.sbin.mysqld ]; then
-	ln -sf /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
-	apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld
 fi
 
 hold_package_version

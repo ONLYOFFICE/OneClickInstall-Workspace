@@ -15,11 +15,8 @@ yum clean all
 
 yum -y install yum-utils
 
-DIST=$(rpm -q --whatprovides redhat-release || rpm -q --whatprovides centos-release);
-DIST=$(echo "$DIST" | sed -n '/-.*/s///p');
-REV=$(cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//);
-REV_PARTS=(${REV//\./ });
-REV=${REV_PARTS[0]};
+DIST=$( (rpm -q --whatprovides redhat-release || rpm -q --whatprovides centos-release) | sed 's/-.*//' | head -1)
+REV=$(grep -oP '(?<=release )\d+' /etc/redhat-release)
 MONOREV=$REV
 
 { yum check-update postgresql; PSQLExitCode=$?; } || true 
@@ -39,24 +36,8 @@ if [[ $exitCode -eq $UPDATE_AVAILABLE_CODE ]]; then
 	fi
 fi
 
-if rpm -qa | grep 'mariadb.*config' | grep -v 'connector' >/dev/null 2>&1; then
+if rpm -qa | grep -E 'mariadb.*(config|[0-9]+\.[0-9]+)' | grep -v 'connector' >/dev/null 2>&1; then
    echo "$RES_MARIADB" && exit 0
-fi 
-
-if ! [[ "$REV" =~ ^[0-9]+$ ]]; then
-	REV=$(cat /etc/redhat-release | sed 's/[^0-9.]*//g');
-	MONOREV=7
-	if [[ $REV =~ ^7.3[.0-9]*$ ]]; then
-		MONOREV=8
-		hyperfastcgi_version="0.4-7"
-
-		yum install -y rpm-sign-libs
-		if grep -q redhat_kernel_module_package /usr/lib/rpm/redhat/macros; then
-			sed -i '/redhat_kernel_module_package/d; /kernel_module_package_release/d' /usr/lib/rpm/redhat/macros
-		fi
-	fi
-	REV_PARTS=(${REV//\./ });
-	REV=${REV_PARTS[0]};
 fi
 
 #Add EPEL and RPMFusion repository
@@ -69,27 +50,18 @@ if [[ "$DIST" == "redhat" && "$REV" -ge 9 ]]; then
 fi
 
 if [ "$REV" = "10" ]; then
-	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
-	REV="9"
-	MONOREV="8"
-	REDIS_PACKAGE=valkey
-	FFMPEG_PACKAGE=ffmpeg-free
-	YUM_EXTRA_PARAMS="--nogpgcheck"
+	REV="9"; MONOREV="8"; REDIS_PACKAGE=valkey; FFMPEG_PACKAGE=ffmpeg-free
+	YUM_EXTRA_PARAMS="--nogpgcheck --exclude=mariadb*"
 elif [ "$REV" = "9" ]; then
-	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
 	MONOREV="8"
 	[ "$DIST" != "redhat" ] && TESTING_REPO="--enablerepo=crb" || /usr/bin/crb enable
 	update-crypto-policies --set DEFAULT:SHA1
 	yum -y install xorg-x11-font-utils
 elif [ "$REV" = "8" ]; then
-	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"};
 	[ "$DIST" != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
-elif [ "$REV" = "7" ] ; then
-	hyperfastcgi_version=${hyperfastcgi_version:-"0.4-6"};
 fi
-
-REDIS_PACKAGE=${REDIS_PACKAGE:-redis}
-FFMPEG_PACKAGE=${FFMPEG_PACKAGE:-ffmpeg}
+[ "$REV" = "9" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
+[ "$REV" = "8" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"}
 
 #add rabbitmq & erlang repo
 curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
@@ -184,8 +156,8 @@ yum -y install epel-release \
 			postgresql \
 			postgresql-server \
 			rabbitmq-server \
-			${REDIS_PACKAGE} \
-			${FFMPEG_PACKAGE} \
+			${REDIS_PACKAGE:-redis} \
+			${FFMPEG_PACKAGE:-ffmpeg} \
 			mysql-community-server \
 			mysql-community-client \
 			mono-webserver-hyperfastcgi-$hyperfastcgi_version \
@@ -203,9 +175,10 @@ yum -y install epel-release \
 yum versionlock mono-complete
 rpm -q elasticsearch || yum install -y elasticsearch-7.16.3-1
 
+command -v god &>/dev/null || gem install --bindir /usr/bin "$(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"')" --no-document
+
 # Remove default-authentication-plugin from MySQL config — option removed in MySQL 8.4, causes startup failure
 sed -i '/^default-authentication-plugin/d' /etc/my.cnf /etc/my.cnf.d/*.cnf 2>/dev/null || true
-command -v god &>/dev/null || gem install --bindir /usr/bin "$(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"')" --no-document
 
 if ! command -v certbot &>/dev/null; then
   if yum list available certbot &>/dev/null; then
