@@ -39,7 +39,7 @@ fi
 curl -fsSL https://deb.nodesource.com/setup_16.x | sed '/sleep/d' | bash -
 
 #add nginx repo
-if [[ "$DISTRIB_CODENAME" != noble ]]; then
+if [[ ! "$DISTRIB_CODENAME" =~ ^(noble|trixie)$ ]]; then
 	curl -fsSL http://nginx.org/keys/nginx_signing.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/nginx.gpg --import
 	chmod 644 /usr/share/keyrings/nginx.gpg
 	echo "deb [signed-by=/usr/share/keyrings/nginx.gpg] http://nginx.org/packages/$DIST/ $DISTRIB_CODENAME nginx" | tee /etc/apt/sources.list.d/nginx.list
@@ -102,6 +102,8 @@ MONO_OPTS="[signed-by=/usr/share/keyrings/mono-official-stable.gpg]"
 echo "deb $MONO_OPTS https://download.mono-project.com/repo/$DIST $MONO_DISTRO/snapshots/6.8.0.123 main" | tee /etc/apt/sources.list.d/mono-official.list
 gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-official-stable.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF || true
 chmod 644 /usr/share/keyrings/mono-official-stable.gpg
+# Pin mono packages to prefer mono-project repo over system mono (e.g. Debian 13 has mono 6.12)
+printf 'Package: mono-* libmono-* libmonosgen-* libmonoboehm-* ca-certificates-mono monodoc-*\nPin: origin download.mono-project.com\nPin-Priority: 1001\n' > /etc/apt/preferences.d/mono-project.pref
 
 # add mono extra repo (focal works for all supported distros)
 echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.cloudfront.net/repo/mono/ubuntu focal main" | tee /etc/apt/sources.list.d/mono-extra.list
