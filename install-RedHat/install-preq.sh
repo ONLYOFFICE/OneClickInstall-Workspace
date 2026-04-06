@@ -51,7 +51,7 @@ fi
 
 if [ "$REV" = "10" ]; then
 	REV="9"; MONOREV="8"; REDIS_PACKAGE=valkey; FFMPEG_PACKAGE=ffmpeg-free
-	YUM_EXTRA_PARAMS="--nogpgcheck --exclude=mariadb*"
+	YUM_EXTRA_PARAMS="--nogpgcheck --exclude=mariadb* --exclude=mysql8.4*"
 elif [ "$REV" = "9" ]; then
 	MONOREV="8"
 	[ "$DIST" != "redhat" ] && TESTING_REPO="--enablerepo=crb" || /usr/bin/crb enable
