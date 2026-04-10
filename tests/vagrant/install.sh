@@ -59,6 +59,7 @@ prepare_vm() {
 
   case $ID in
     ubuntu|debian)
+      systemctl mask --now apt-daily.service apt-daily-upgrade.service apt-daily.timer apt-daily-upgrade.timer unattended-upgrades 2>/dev/null || true
       if [[ "$ID" == "debian" ]] && dpkg -s postfix &>/dev/null; then
         apt-get remove -y postfix && echo "${COLOR_GREEN}[OK] PREPARE_VM: Postfix was removed${COLOR_RESET}"
       fi
