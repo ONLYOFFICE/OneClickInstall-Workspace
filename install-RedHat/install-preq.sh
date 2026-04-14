@@ -62,6 +62,7 @@ elif [ "$REV" = "8" ]; then
 fi
 [ "$REV" = "9" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
 [ "$REV" = "8" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"}
+REDIS_PACKAGE="${REDIS_PACKAGE:-redis}"
 
 #add rabbitmq & erlang repo
 curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
@@ -156,7 +157,7 @@ yum -y install epel-release \
 			postgresql \
 			postgresql-server \
 			rabbitmq-server \
-			${REDIS_PACKAGE:-redis} \
+			${REDIS_PACKAGE} \
 			${FFMPEG_PACKAGE:-ffmpeg} \
 			mysql-community-server \
 			mysql-community-client \
