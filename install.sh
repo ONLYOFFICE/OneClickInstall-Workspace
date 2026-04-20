@@ -1287,13 +1287,6 @@ install_document_server () {
 		if [[ -z ${DOCUMENT_SERVER_ID} ]]; then
 			echo "ONLYOFFICE DOCUMENT SERVER not installed."
 			exit 1;
-		else
-			COMMUNITY_SERVER_ID=$(get_container_id "$COMMUNITY_CONTAINER_NAME");
-
-			if [[ -n ${COMMUNITY_SERVER_ID} ]]; then
-				DOCUMENT_SERVER_UID=$(docker exec ${DOCUMENT_CONTAINER_NAME} id -u ds)
-				docker exec ${COMMUNITY_CONTAINER_NAME} chown -R ${DOCUMENT_SERVER_UID}:${PRODUCT} /var/www/${PRODUCT}/DocumentServerData
-			fi
 		fi
 	fi
 }
@@ -1695,6 +1688,11 @@ install_community_server () {
 			exit 1;
 		else
 			docker exec -d ${COMMUNITY_CONTAINER_NAME} bash -c "[ -d /var/www/${PRODUCT}/Data/partnerdata ] && cp /var/www/${PRODUCT}/Data/partnerdata/* /var/www/${PRODUCT}/WebStudio/App_Data/static/partnerdata/ && rm -rf /var/www/${PRODUCT}/Data/partnerdata"
+			if [[ -n ${DOCUMENT_SERVER_ID} ]]; then
+				DOCUMENT_SERVER_UID=$(docker exec ${DOCUMENT_SERVER_ID} id -u ds)
+				docker exec ${COMMUNITY_SERVER_ID} chown -R ${DOCUMENT_SERVER_UID}:${PRODUCT} /var/www/${PRODUCT}/DocumentServerData
+				docker exec ${COMMUNITY_SERVER_ID} chmod -R g+w /var/www/${PRODUCT}/DocumentServerData
+			fi
 		fi
 	fi
 }
