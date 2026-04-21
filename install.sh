@@ -1168,14 +1168,15 @@ max_allowed_packet = 1048576000
 group_concat_max_len = 2048
 log-error = /var/log/mysql/error.log" > ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			[[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -lt "8000000000" ]] && echo "tls_version = TLSv1.2" >> ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
+			echo "loose_mysql_native_password=ON" >> ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			chmod 0644 ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 		fi
 
 		if ! file_exists ${BASE_DIR}/mysql/initdb/setup.sql; then
-                        echo "CREATE USER '$MYSQL_USER'@'%' IDENTIFIED WITH caching_sha2_password BY '$MYSQL_PASSWORD';
-CREATE USER '$MYSQL_MAIL_USER'@'%' IDENTIFIED WITH caching_sha2_password BY '$MYSQL_MAIL_ROOT_PASSWORD';
-ALTER USER 'root'@'%' IDENTIFIED WITH caching_sha2_password BY '$MYSQL_ROOT_PASSWORD';
-ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '$MYSQL_ROOT_PASSWORD';
+                        echo "CREATE USER '$MYSQL_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$MYSQL_PASSWORD';
+CREATE USER '$MYSQL_MAIL_USER'@'%' IDENTIFIED WITH mysql_native_password BY '$MYSQL_MAIL_ROOT_PASSWORD';
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$MYSQL_ROOT_PASSWORD';
 GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_ROOT_USER'@'%';
 GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_USER'@'%';
 GRANT ALL PRIVILEGES ON *.* TO '$MYSQL_MAIL_USER'@'%';
