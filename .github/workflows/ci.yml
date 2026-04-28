@@ -6,10 +6,6 @@ on:
 
   workflow_dispatch:
     inputs:
-      centos8s:
-        type: boolean
-        description: 'CentOS 8S'
-        default: true
       rhel9:
         type: boolean
         description: 'RHEL 9'
@@ -21,10 +17,6 @@ on:
       centos10:
         type: boolean
         description: 'CentOS 10'
-        default: true
-      debian11:
-        type: boolean
-        description: 'Debian 11'
         default: true
       debian12:
         type: boolean
@@ -59,11 +51,9 @@ jobs:
         run: |
           matrix=$(echo '{
             "include": [
-              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS 8S", "os": "base-centos8s", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.centos9s || true }}', "name": "CentOS 9S", "os": "base-centos9s", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.rhel9    || true }}', "name": "RHEL 9",    "os": "rhel9",         "distr": "generic"},
               {"execute": '${{ github.event.inputs.centos10 || true }}', "name": "CentOS 10", "os": "base-centos10", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.debian11 || true }}', "name": "Debian 11", "os": "base-debian11", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.debian12 || true }}', "name": "Debian 12", "os": "base-debian12", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.debian13 || true }}', "name": "Debian 13", "os": "base-debian13", "distr": "onlyoffice"},
               {"execute": '${{ github.event.inputs.ubuntu2204 || true }}', "name": "Ubuntu 22.04", "os": "base-ubuntu2204", "distr": "onlyoffice"},
@@ -76,12 +66,16 @@ jobs:
     name: "Install (${{ matrix.name}})"
     runs-on: ubuntu-22.04
     needs: prepare
+    defaults:
+      run:
+        working-directory: tests/vagrant
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.prepare.outputs.matrix)}}
 
     steps:
       - name: Free Disk Space
+        working-directory: ${{ github.workspace }}
         run: |
           sudo docker image prune --all --force
           sudo rm -rf /usr/local/lib/android || true
@@ -90,6 +84,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Get update and install vagrant
+        working-directory: ${{ github.workspace }}
         run: |
           set -eux
           gpg --keyserver keyserver.ubuntu.com --recv-keys A2F683C52980AECF && gpg --export A2F683C52980AECF > /usr/share/keyrings/virtualbox.gpg
@@ -110,10 +105,9 @@ jobs:
           OS: ${{ matrix.os }}
         run: |
           set -eux
-          cd tests/vagrant
           if [[ "${{ github.event_name }}" == "schedule" ]]; then
             export DOWNLOAD_SCRIPT='-ds true'
-            export TEST_REPO=''
+            export TEST_CASE='--production-install'
             export ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'"
           else
             export DOWNLOAD_SCRIPT='-ds false'
@@ -124,7 +118,6 @@ jobs:
 
       - name: Health check
         run: |
-          cd tests/vagrant
           if vagrant status | grep -q "running"; then
             vagrant ssh -c "sudo bash /home/vagrant/tests/vagrant/post-install.sh healthcheck" || true
           else
@@ -134,7 +127,6 @@ jobs:
       - name: Collect logs
         if: always()
         run: |
-          cd tests/vagrant
           if vagrant status | grep -q "running"; then
             vagrant ssh -c "sudo bash /home/vagrant/tests/vagrant/post-install.sh logs" || true
           else
@@ -144,6 +136,5 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          cd tests/vagrant || exit 0
           vagrant destroy --force || true
           vagrant global-status --prune || true

@@ -30,32 +30,20 @@ jobs:
       matrix:
         include:
           - distr: "generic"
-            boxes: "centos8s"
-            name: "centos8s"
+            boxes: "rhel9"
+            name: "rhel9"
 
           - distr: "generic"
-            boxes: "centos9s"
-            name: "centos9s"
-            
-          - distr: "generic"
-            boxes: "debian10"
-            name: "debian10"
+            boxes: "centos10"
+            name: "centos10"
 
           - distr: "generic"
-            boxes: "debian11"
-            name: "debian11"
-
-          - distr: "debian"
-            boxes: "bookworm64"
-            name: "debian12"
-            
-          - distr: "generic"
-            boxes: "ubuntu2004"
-            name: "ubuntu2004"
+            boxes: "debian13"
+            name: "debian13"
 
           - distr: "generic"
-            boxes: "ubuntu2204"
-            name: "ubuntu2204"
+            boxes: "ubuntu2404"
+            name: "ubuntu2404"
 
     steps:
     - name: Checkout code
