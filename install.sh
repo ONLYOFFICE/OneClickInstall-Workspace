@@ -1025,39 +1025,33 @@ get_available_version () {
 		install_jq >/dev/null 2>&1
 	fi
 
-	CREDENTIALS="";
-	AUTH_HEADER="";
-	TAGS_RESP="";
+	local CREDENTIALS="" AUTH_HEADER=""
 
 	if [[ -n ${HUB} ]]; then
-		DOCKER_CONFIG="$HOME/.docker/config.json";
+		local DOCKER_CONFIG="$HOME/.docker/config.json"
 
 		if [[ -f "$DOCKER_CONFIG" ]]; then
-			CREDENTIALS=$(jq -r '.auths."'$HUB'".auth' < "$DOCKER_CONFIG");
-			if [ "$CREDENTIALS" == "null" ]; then
-				CREDENTIALS="";
-			fi
+			CREDENTIALS=$(jq -r '.auths."'$HUB'".auth' < "$DOCKER_CONFIG")
+			[ "$CREDENTIALS" == "null" ] && CREDENTIALS=""
 		fi
 
 		if [[ -z ${CREDENTIALS} && -n ${USERNAME} && -n ${PASSWORD} ]]; then
-			CREDENTIALS=$(echo -n "$USERNAME:$PASSWORD" | base64);
+			CREDENTIALS=$(echo -n "$USERNAME:$PASSWORD" | base64)
 		fi
 
-		if [[ -n ${CREDENTIALS} ]]; then
-			AUTH_HEADER="Authorization: Basic $CREDENTIALS";
-		fi
+		[[ -n ${CREDENTIALS} ]] && AUTH_HEADER="Authorization: Basic $CREDENTIALS"
 
-		REPO=$(echo $1 | sed "s/$HUB\///g");
-		TAGS_RESP=$(curl -s -H "$AUTH_HEADER" -X GET https://$HUB/v2/$REPO/tags/list);
-		TAGS_RESP=$(echo $TAGS_RESP | jq -r '.tags')
+		local REPO=$(echo $1 | sed "s/$HUB\///g")
+		curl -s -H "$AUTH_HEADER" -X GET https://$HUB/v2/$REPO/tags/list \
+			| jq -r '.tags[] | select(test("^[0-9]+\\.[0-9]+(\\.[0-9]+){0,2}$") and (test("^99\\.") | not))' \
+			| sort -V | tail -n 1
 	else
 		CREDENTIALS=${USERNAME:+${PASSWORD:+-u ${USERNAME}:${PASSWORD}}}
-		TOKEN=$(curl -fs ${CREDENTIALS} "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${1}:pull" | jq -r .token)
-		TAGS_RESP=$(curl -s -H "Authorization: Bearer ${TOKEN}" -X GET https://registry-1.docker.io/v2/$1/tags/list | jq -r '[.tags[] | select(test("^[0-9]+\\.[0-9]+(\\.[0-9]+){0,2}$") and (test("^99\\.") | not))] | sort | .[]')
+		local TOKEN=$(curl -fs ${CREDENTIALS} "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${1}:pull" | jq -r .token)
+		curl -s -H "Authorization: Bearer ${TOKEN}" -X GET https://registry-1.docker.io/v2/$1/tags/list \
+			| jq -r '[.tags[] | select(test("^[0-9]+\\.[0-9]+(\\.[0-9]+){0,2}$") and (test("^99\\.") | not))] | sort | .[]' \
+			| sort -V | tail -n 1
 	fi
-
-	VERSION_REGEX='^[0-9]+\.[0-9]+(\.[0-9]+){0,2}$'
-	echo $(printf "%s\n" "${TAGS_RESP[@]}" | grep -E "$VERSION_REGEX" | sort -V | tail -n 1)
 }
 
 get_current_image_name () {
