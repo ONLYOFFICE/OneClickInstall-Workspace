@@ -1,109 +1,110 @@
 name: Rebuild Boxes
 
 on:
-  #Auto-rebuild trigger disabled now.
-  #push:
-    #branches:
-      #- master
-    #paths-ignore:
-      #- '**/README.md'
-      #- '**/LICENSE'
-      #- '.github/**'
-      #- 'tests/**'
   workflow_dispatch:
+    inputs:
+      testing:
+        type: boolean
+        description: "Use 4testing images"
+        default: false
 
-env: 
-  BOX_DISTRIBUTION: generic
+env:
   VAGRANT_TOKEN: ${{ secrets.VAGRANT_TOKEN }}
   VAGRANT_ACCOUNT: ${{ secrets.VAGRANT_ACCOUNT }}
 
-defaults:
-  run:
-    working-directory: 'tests/vagrant'
-
 jobs:
   vagrant-up:
-    name: "Rebuild box with ${{ matrix.name }}"
-    runs-on: ubuntu-latest
+    name: "Rebuild box with ${{ matrix.os }}"
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: tests/vagrant
     strategy:
       fail-fast: false
       matrix:
         include:
-          - distr: "generic"
-            boxes: "rhel9"
-            name: "rhel9"
+          - distr: "onlyoffice"
+            os: "base-centos10"
+            box_name: "centos10"
 
-          - distr: "generic"
-            boxes: "centos10"
-            name: "centos10"
+          - distr: "onlyoffice"
+            os: "base-debian13"
+            box_name: "debian13"
 
-          - distr: "generic"
-            boxes: "debian13"
-            name: "debian13"
-
-          - distr: "generic"
-            boxes: "ubuntu2404"
-            name: "ubuntu2404"
+          - distr: "onlyoffice"
+            os: "base-ubuntu2404"
+            box_name: "ubuntu2404"
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set up Python 3.
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-
     - name: Free Disk Space
+      working-directory: ${{ github.workspace }}
       run: |
-        sudo rm -rf /usr/local/lib/android /opt/ghc
-        sudo docker image prune --all --force       
+        sudo docker image prune --all --force
+        sudo rm -rf /usr/local/lib/android || true
+
+    - name: Checkout code
+      uses: actions/checkout@v6
 
     - name: Get update and install vagrant
+      working-directory: ${{ github.workspace }}
       run: |
         set -eux
+        gpg --keyserver keyserver.ubuntu.com --recv-keys A2F683C52980AECF && gpg --export A2F683C52980AECF > /usr/share/keyrings/virtualbox.gpg
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/virtualbox.gpg] https://download.virtualbox.org/virtualbox/debian $(. /etc/os-release && echo $UBUNTU_CODENAME) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
+        sudo wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+        sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
         sudo apt update -y
-        sudo apt install vagrant -y
+        sudo apt-get install -y vagrant
         # Temporary install VBox 7.1.12 via curl (.deb) to avoid SSH/NAT issues in 7.1.14
-        curl -fsSL "https://download.virtualbox.org/virtualbox/7.1.12/virtualbox-7.1_7.1.12-169651~Ubuntu~jammy_amd64.deb" -o /tmp/vbox.deb && sudo apt-get install -y /tmp/vbox.deb
+        curl -fsSL "https://download.virtualbox.org/virtualbox/7.1.12/$(curl -fsSL https://download.virtualbox.org/virtualbox/7.1.12/MD5SUMS | grep -oE 'virtualbox-7\.1_7\.1\.12-[0-9]+~Ubuntu~jammy_amd64\.deb' | head -n1)" -o /tmp/vbox.deb && sudo apt-get install -y /tmp/vbox.deb
 
-    - name: Login Vagrant cloud
-      run: vagrant cloud auth login --token ${VAGRANT_TOKEN}
+    - name: Install
+      timeout-minutes: 90
+      env:
+        DISTR: ${{ matrix.distr }}
+        RAM: '12288'
+        CPU: '3'
+        OS: ${{ matrix.os }}
+      run: |
+          set -eux
+          if [[ "${{ github.event.inputs.testing }}" == "true" ]]; then
+            export DOWNLOAD_SCRIPT='-ds false'
+            export TEST_REPO='-tr true'
+            export ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true'"
+          else
+            export DOWNLOAD_SCRIPT='-ds true'
+            export TEST_REPO=''
+            export ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'"
+          fi
+          vagrant up
 
-    - name: Rebuild all boxes
-      uses: nick-fields/retry@v2
-      with:
-        max_attempts: 3
-        timeout_minutes: 240
-        retry_on: error
-        command: |
-                set -eux
-                
-                cd tests/vagrant
-                export date=$(date +%F)
-                sleep 300
-                   TEST_CASE='--production-install' \
-                   DISTR='${{ matrix.distr }}' \
-                   OS='${{ matrix.boxes }}' \
-                   DOWNLOAD_SCRIPT='-ds true' \
-                   RAM='9100' \
-                   CPU='3' \
-                   ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false'" \
-                   vagrant up
-                sleep 300
-                vagrant package --output repacked_${{ matrix.name }}.box
-                vagrant cloud publish \
-                   ${VAGRANT_ACCOUNT}/workspace-${{ matrix.name }} \
-                   $date virtualbox repacked_${{ matrix.name }}.box \
-                   -d "Box with pre-installed workspace" \
-                   --version-description "Workspace <version>" \
-                   --release --short-description "Boxes for update testing" \
-                   --force \
-                   --no-private
-        on_retry_command: |
-               set -eux
+    - name: Health check
+      run: |
+        cd tests/vagrant
+        if vagrant status | grep -q "running"; then
+          vagrant ssh -c "sudo bash /home/vagrant/tests/vagrant/post-install.sh healthcheck" || true
+        else
+          echo "VM is not running, skipping health check"
+        fi
 
-               echo "RUN CLEAN UP: Remove repacked box and destroy"
-               cd tests/vagrant
-               rm -rf repacked_${{ matrix.name }}.box
-               vagrant destroy --force
+    - name: Publish box
+      if: success()
+      run: |
+          VERSION=$(vagrant ssh -c "command -v rpm >/dev/null 2>&1 && rpm -q onlyoffice-communityserver --queryformat '%{VERSION}-%{RELEASE}' 2>/dev/null || dpkg-query -W -f='\${Version}' onlyoffice-communityserver 2>/dev/null" 2>/dev/null | tr -d '\r\n ')
+          vagrant cloud auth login --token ${VAGRANT_TOKEN}
+          vagrant cloud box create ${VAGRANT_ACCOUNT}/workspace-${{ matrix.box_name }} --no-private || true
+          vagrant package --output repacked_${{ matrix.box_name }}.box
+          vagrant cloud publish \
+              ${VAGRANT_ACCOUNT}/workspace-${{ matrix.box_name }} \
+              $(date +%Y%m%d) virtualbox repacked_${{ matrix.box_name }}.box \
+              -d "Box with pre-installed workspace" \
+              --version-description "Workspace ${VERSION}" \
+              --release --short-description "Boxes for update testing" \
+              --force \
+              --no-private
+
+    - name: Cleanup
+      if: always()
+      run: |
+        vagrant destroy --force || true
+        vagrant global-status --prune || true
