@@ -39,15 +39,17 @@ get_colors() {
 }
 
 healthcheck_systemd_services() {
+  local failed=0
   for service in "${SERVICES_SYSTEMD[@]}"; do
     if systemctl is-active --quiet "$service"; then
       echo "${COLOR_GREEN}[OK] Service ${service} is running${COLOR_RESET}"
     else
       echo "${COLOR_RED}[FAILED] Service ${service} is not running${COLOR_RESET}"
       echo "::error::Service ${service} is not running"
-      return 1
+      failed=1
     fi
   done
+  return $failed
 }
 
 services_logs() {

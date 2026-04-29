@@ -80,11 +80,11 @@ jobs:
 
     - name: Health check
       run: |
-        cd tests/vagrant
         if vagrant status | grep -q "running"; then
-          vagrant ssh -c "sudo bash /home/vagrant/tests/vagrant/post-install.sh healthcheck" || true
+          vagrant ssh -c "sudo bash /home/vagrant/tests/vagrant/post-install.sh healthcheck"
         else
           echo "VM is not running, skipping health check"
+          exit 1
         fi
 
     - name: Publish box
