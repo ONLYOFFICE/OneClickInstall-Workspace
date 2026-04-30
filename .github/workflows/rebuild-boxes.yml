@@ -8,9 +8,6 @@ on:
         description: "Use 4testing images"
         default: false
 
-env:
-  VAGRANT_TOKEN: ${{ secrets.VAGRANT_TOKEN }}
-  VAGRANT_ACCOUNT: ${{ secrets.VAGRANT_ACCOUNT }}
 
 jobs:
   vagrant-up:
@@ -23,10 +20,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - distr: "onlyoffice"
-            os: "base-centos10"
-            box_name: "centos10"
-
           - distr: "onlyoffice"
             os: "base-debian13"
             box_name: "debian13"
@@ -87,21 +80,28 @@ jobs:
           exit 1
         fi
 
+    - name: Download hcp CLI
+      if: success()
+      uses: hashicorp/hcp-setup-action@v0
+      with:
+        version: latest
+
     - name: Publish box
       if: success()
+      env:
+        HCP_CLIENT_ID: ${{ secrets.HCP_CLIENT_ID }}
+        HCP_CLIENT_SECRET: ${{ secrets.HCP_CLIENT_SECRET }}
+        VAGRANT_ORG: onlyoffice
+        PRODUCT: workspace
+        OS_NAME: ${{ matrix.box_name }}
       run: |
-          VERSION=$(vagrant ssh -c "command -v rpm >/dev/null 2>&1 && rpm -q onlyoffice-communityserver --queryformat '%{VERSION}-%{RELEASE}' 2>/dev/null || dpkg-query -W -f='\${Version}' onlyoffice-communityserver 2>/dev/null" 2>/dev/null | tr -d '\r\n ')
-          vagrant cloud auth login --token ${VAGRANT_TOKEN}
-          vagrant cloud box create ${VAGRANT_ACCOUNT}/workspace-${{ matrix.box_name }} --no-private || true
-          vagrant package --output repacked_${{ matrix.box_name }}.box
-          vagrant cloud publish \
-              ${VAGRANT_ACCOUNT}/workspace-${{ matrix.box_name }} \
-              $(date +%Y%m%d) virtualbox repacked_${{ matrix.box_name }}.box \
-              -d "Box with pre-installed workspace" \
-              --version-description "Workspace ${VERSION}" \
-              --release --short-description "Boxes for update testing" \
-              --force \
-              --no-private
+          set -eux
+          export BOX_VERSION=$(vagrant ssh -c "command -v rpm >/dev/null 2>&1 && rpm -q onlyoffice-communityserver --queryformat '%{VERSION}' 2>/dev/null || dpkg-query -W -f='\${Version}' onlyoffice-communityserver 2>/dev/null" 2>/dev/null | tr -d '\r\n ' | cut -d. -f1-3)
+          [[ "$BOX_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "BOX_VERSION is invalid: '${BOX_VERSION}'"; exit 1; }
+          vagrant package ubuntu --output ${PRODUCT}-${OS_NAME}.box
+          wget https://raw.githubusercontent.com/ONLYOFFICE/ga-common/refs/heads/master/.github/scripts/vagrant_publish.sh
+          bash ./vagrant_publish.sh
+          rm -f ${PRODUCT}-${OS_NAME}.box || true
 
     - name: Cleanup
       if: always()
