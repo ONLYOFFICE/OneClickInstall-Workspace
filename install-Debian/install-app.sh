@@ -35,7 +35,7 @@ if [ "$UPDATE" = "true" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then
 		ds_pkg_name="${package_sysname}-documentserver-ee";
 	fi
 
-	if [ -n $ds_pkg_name ]; then
+	if [ -n "$ds_pkg_name" ]; then
 		if ! dpkg -l ${ds_pkg_name} &> /dev/null; then
 			
 			debconf-get-selections | grep ^${ds_pkg_installed_name} | sed s/${ds_pkg_installed_name}/${ds_pkg_name}/g | debconf-set-selections

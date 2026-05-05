@@ -45,7 +45,7 @@ if [ "$UPDATE" = "true" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then
 		ds_pkg_name="${package_sysname}-documentserver-ee";
 	fi
 
-	if [ -n $ds_pkg_name ]; then
+	if [ -n "$ds_pkg_name" ]; then
 		if ! rpm -qi ${ds_pkg_name} &> /dev/null; then
 			${package_manager} -y remove ${ds_pkg_installed_name}
 
@@ -201,7 +201,7 @@ fi
 
 if [ "$CONTROL_PANEL_INSTALLED" = "false" ]; then
 
-	declare -x CONTROLPANEL_DB_PORT=${CONTROLPANEL_DB_PORT:8082}
+	declare -x CONTROLPANEL_DB_PORT=${CONTROLPANEL_DB_PORT:-8082}
 
 	${package_manager} -y install ${package_sysname}-controlpanel
 
