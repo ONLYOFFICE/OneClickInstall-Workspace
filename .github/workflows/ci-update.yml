@@ -1,36 +1,32 @@
-name: OneClickTests-Update
-  
+name: Update OCI Workspace
+
 on:
   workflow_dispatch:
     inputs:
-      centos8s:
-        type: boolean
-        description: 'CentOS 8 Stream'
-        default: true
       centos9s:
         type: boolean
         description: 'CentOS 9 Stream'
         default: true
-      debian10:
+      centos10:
         type: boolean
-        description: 'Debian 10'
-        default: true
-      debian11:
-        type: boolean
-        description: 'Debian 11'
+        description: 'CentOS 10'
         default: true
       debian12:
         type: boolean
         description: 'Debian 12'
         default: true
-      ubuntu2004:
+      debian13:
         type: boolean
-        description: 'Ubuntu 20.04'
+        description: 'Debian 13'
         default: true
       ubuntu2204:
         type: boolean
         description: 'Ubuntu 22.04'
-        default: true  
+        default: true
+      ubuntu2404:
+        type: boolean
+        description: 'Ubuntu 24.04'
+        default: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
@@ -48,75 +44,83 @@ jobs:
         run: |
           matrix=$(echo '{
             "include": [
-              {"execute": '${{ github.event.inputs.centos8s || true }}', "name": "CentOS8S", "os": "workspace-centos8s", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.centos9s || true }}', "name": "CentOS9S", "os": "workspace-centos9s", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.debian10 || true }}', "name": "Debian10", "os": "workspace-debian10", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.debian11 || true }}', "name": "Debian11", "os": "workspace-debian11", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.debian12 || true }}', "name": "Debian12", "os": "workspace-debian12", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.ubuntu2004 || true }}', "name": "Ubuntu20.04", "os": "workspace-ubuntu2004", "distr": "onlyoffice"},
-              {"execute": '${{ github.event.inputs.ubuntu2204 || true }}', "name": "Ubuntu22.04", "os": "workspace-ubuntu2204", "distr": "onlyoffice"}
+              {"execute": '${{ github.event.inputs.centos9s  || true }}', "name": "CentOS 9S",    "os": "workspace-centos9s",   "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.centos10  || true }}', "name": "CentOS 10",   "os": "workspace-centos10",   "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.debian12  || true }}', "name": "Debian 12",   "os": "workspace-debian12",   "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.debian13  || true }}', "name": "Debian 13",   "os": "workspace-debian13",   "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.ubuntu2204 || true }}', "name": "Ubuntu 22.04", "os": "workspace-ubuntu2204", "distr": "onlyoffice"},
+              {"execute": '${{ github.event.inputs.ubuntu2404 || true }}', "name": "Ubuntu 24.04", "os": "workspace-ubuntu2404", "distr": "onlyoffice"}
             ]
           }' | jq -c '{include: [.include[] | select(.execute == true)]}')
           echo "matrix=${matrix}" >> $GITHUB_OUTPUT
 
   update-test:
-    name: "Update test on ${{ matrix.name }}"
+    name: "Update (${{ matrix.name }})"
     runs-on: ubuntu-22.04
-    if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
     needs: prepare
+    defaults:
+      run:
+        working-directory: tests/vagrant
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.prepare.outputs.matrix)}}
 
     steps:
-    - name: Free Disk Space
-      run: |
-        sudo docker image prune --all --force
-        sudo rm -rf /usr/local/lib/android || true
+      - name: Free Disk Space
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo docker image prune --all --force
+          sudo rm -rf /usr/local/lib/android || true
 
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v6
 
-    - name: Free Disk Space
-      run: |
-        sudo rm -rf /usr/local/lib/android /opt/ghc
-        sudo docker image prune --all --force       
+      - name: Get update and install vagrant
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -eux
+          gpg --keyserver keyserver.ubuntu.com --recv-keys A2F683C52980AECF && gpg --export A2F683C52980AECF > /usr/share/keyrings/virtualbox.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/virtualbox.gpg] https://download.virtualbox.org/virtualbox/debian $(. /etc/os-release && echo $UBUNTU_CODENAME) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
+          sudo wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update -y
+          sudo apt-get install -y vagrant
+          # Temporary install VBox 7.1.12 via curl (.deb) to avoid SSH/NAT issues in 7.1.14
+          curl -fsSL "https://download.virtualbox.org/virtualbox/7.1.12/$(curl -fsSL https://download.virtualbox.org/virtualbox/7.1.12/MD5SUMS | grep -oE 'virtualbox-7\.1_7\.1\.12-[0-9]+~Ubuntu~jammy_amd64\.deb' | head -n1)" -o /tmp/vbox.deb && sudo apt-get install -y /tmp/vbox.deb
 
-    - name: Get update and install vagrant
-      run: |
-        set -eux
-        gpg --keyserver keyserver.ubuntu.com --recv-keys A2F683C52980AECF && gpg --export A2F683C52980AECF > /usr/share/keyrings/virtualbox.gpg
-        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/virtualbox.gpg] https://download.virtualbox.org/virtualbox/debian $(. /etc/os-release && echo $UBUNTU_CODENAME) contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
-        sudo wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-        sudo apt update -y
-        sudo apt-get install -y vagrant
-        # Temporary install VBox 7.1.12 via curl (.deb) to avoid SSH/NAT issues in 7.1.14
-        curl -fsSL "https://download.virtualbox.org/virtualbox/7.1.12/$(curl -fsSL https://download.virtualbox.org/virtualbox/7.1.12/MD5SUMS | grep -oE 'virtualbox-7\.1_7\.1\.12-[0-9]+~Ubuntu~jammy_amd64\.deb' | head -n1)" -o /tmp/vbox.deb && sudo apt-get install -y /tmp/vbox.deb
+      - name: Update
+        timeout-minutes: 90
+        env:
+          DISTR: ${{ matrix.distr }}
+          RAM: '8192'
+          CPU: '3'
+          OS: ${{ matrix.os }}
+        run: |
+          set -eux
+          export DOWNLOAD_SCRIPT='-ds false'
+          export TEST_REPO='-tr true'
+          export ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true --update true'"
+          vagrant up
 
-    - name: Testing with update
-      uses: nick-fields/retry@v2
-      with:
-        max_attempts: 1
-        timeout_minutes: 90
-        retry_on: error
-        command: |
-              cd ./tests/vagrant
-              set -eux
+      - name: Health check
+        run: |
+          if vagrant status | grep -q "running"; then
+            vagrant ssh -c "sudo bash /home/vagrant/tests/vagrant/post-install.sh healthcheck" || true
+          else
+            echo "VM is not running, skipping health check"
+          fi
 
-              TEST_CASE='--local-install' \
-              DISTR='${{matrix.distr}}' \
-              RAM='6100' \
-              CPU='2' \
-              OS='${{ matrix.os }}' \
-              DOWNLOAD_SCRIPT='-ds false' \
-              TEST_REPO='-tr true' \
-              ARGUMENTS="-arg '--skiphardwarecheck true --makeswap false --localscripts true --update true'" \
-              vagrant up
-              sleep 10
-              vagrant destroy --force
-        on_retry_command: |
-             set -eux
-             echo "Clean-up and one more try"
-             cd ./tests/vagrant
-             vagrant destroy --force
+      - name: Collect logs
+        if: always()
+        run: |
+          if vagrant status | grep -q "running"; then
+            vagrant ssh -c "sudo bash /home/vagrant/tests/vagrant/post-install.sh logs" || true
+          else
+            echo "VM is not running, skipping log collection"
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          vagrant destroy --force || true
+          vagrant global-status --prune || true
