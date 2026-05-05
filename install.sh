@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# (c) Copyright Ascensio System Limited 2010-2021
+# (c) Copyright Ascensio System Limited 2010-2026
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -1025,39 +1025,33 @@ get_available_version () {
 		install_jq >/dev/null 2>&1
 	fi
 
-	CREDENTIALS="";
-	AUTH_HEADER="";
-	TAGS_RESP="";
+	local CREDENTIALS="" AUTH_HEADER=""
 
 	if [[ -n ${HUB} ]]; then
-		DOCKER_CONFIG="$HOME/.docker/config.json";
+		local DOCKER_CONFIG="$HOME/.docker/config.json"
 
 		if [[ -f "$DOCKER_CONFIG" ]]; then
-			CREDENTIALS=$(jq -r '.auths."'$HUB'".auth' < "$DOCKER_CONFIG");
-			if [ "$CREDENTIALS" == "null" ]; then
-				CREDENTIALS="";
-			fi
+			CREDENTIALS=$(jq -r '.auths."'$HUB'".auth' < "$DOCKER_CONFIG")
+			[ "$CREDENTIALS" == "null" ] && CREDENTIALS=""
 		fi
 
 		if [[ -z ${CREDENTIALS} && -n ${USERNAME} && -n ${PASSWORD} ]]; then
-			CREDENTIALS=$(echo -n "$USERNAME:$PASSWORD" | base64);
+			CREDENTIALS=$(echo -n "$USERNAME:$PASSWORD" | base64)
 		fi
 
-		if [[ -n ${CREDENTIALS} ]]; then
-			AUTH_HEADER="Authorization: Basic $CREDENTIALS";
-		fi
+		[[ -n ${CREDENTIALS} ]] && AUTH_HEADER="Authorization: Basic $CREDENTIALS"
 
-		REPO=$(echo $1 | sed "s/$HUB\///g");
-		TAGS_RESP=$(curl -s -H "$AUTH_HEADER" -X GET https://$HUB/v2/$REPO/tags/list);
-		TAGS_RESP=$(echo $TAGS_RESP | jq -r '.tags')
+		local REPO=$(echo $1 | sed "s/$HUB\///g")
+		curl -s -H "$AUTH_HEADER" -X GET https://$HUB/v2/$REPO/tags/list \
+			| jq -r '.tags[] | select(test("^[0-9]+\\.[0-9]+(\\.[0-9]+){0,2}$") and (test("^99\\.") | not))' \
+			| sort -V | tail -n 1
 	else
 		CREDENTIALS=${USERNAME:+${PASSWORD:+-u ${USERNAME}:${PASSWORD}}}
-		TOKEN=$(curl -fs ${CREDENTIALS} "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${1}:pull" | jq -r .token)
-		TAGS_RESP=$(curl -s -H "Authorization: Bearer ${TOKEN}" -X GET https://registry-1.docker.io/v2/$1/tags/list | jq -r '.tags | .[-100:] | .[]')
+		local TOKEN=$(curl -fs ${CREDENTIALS} "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${1}:pull" | jq -r .token)
+		curl -s -H "Authorization: Bearer ${TOKEN}" -X GET https://registry-1.docker.io/v2/$1/tags/list \
+			| jq -r '[.tags[] | select(test("^[0-9]+\\.[0-9]+(\\.[0-9]+){0,2}$") and (test("^99\\.") | not))] | sort | .[]' \
+			| sort -V | tail -n 1
 	fi
-
-	VERSION_REGEX='^[0-9]+\.[0-9]+(\.[0-9]+){0,2}$'
-	echo $(printf "%s\n" "${TAGS_RESP[@]}" | grep -E "$VERSION_REGEX" | sort -V | tail -n 1)
 }
 
 get_current_image_name () {
@@ -1155,14 +1149,6 @@ install_mysql_server () {
 			fi
 		fi
 
-		if file_exists "${BASE_DIR}/mysql/initdb/setup.sql"; then
-			if grep -q "caching_sha2_password" ${BASE_DIR}/mysql/initdb/setup.sql; then
-				sed -i 's/caching_sha2_password/mysql_native_password/g' ${BASE_DIR}/mysql/initdb/setup.sql
-			elif ! grep -q "mysql_native_password" ${BASE_DIR}/mysql/initdb/setup.sql; then
-				sed -i 's/IDENTIFIED BY/IDENTIFIED WITH mysql_native_password BY/g' ${BASE_DIR}/mysql/initdb/setup.sql
-			fi
-		fi
-
 		docker restart ${MYSQL_SERVER_ID};
 	fi
 
@@ -1176,6 +1162,7 @@ max_allowed_packet = 1048576000
 group_concat_max_len = 2048
 log-error = /var/log/mysql/error.log" > ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			[[ "$(awk -F. '{ printf("%d%03d%03d%03d", $1,$2,$3,$4); }' <<< $MYSQL_VERSION)" -lt "8000000000" ]] && echo "tls_version = TLSv1.2" >> ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
+			echo "loose_mysql_native_password=ON" >> ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 			chmod 0644 ${BASE_DIR}/mysql/conf.d/${PRODUCT}.cnf
 		fi
 
@@ -1295,12 +1282,6 @@ install_document_server () {
 		if [[ -z ${DOCUMENT_SERVER_ID} ]]; then
 			echo "ONLYOFFICE DOCUMENT SERVER not installed."
 			exit 1;
-		else
-			COMMUNITY_SERVER_ID=$(get_container_id "$COMMUNITY_CONTAINER_NAME");
-
-			if [[ -n ${COMMUNITY_SERVER_ID} ]]; then
-				docker exec ${COMMUNITY_CONTAINER_NAME} chown -R ${PRODUCT}:${PRODUCT} /var/www/${PRODUCT}/DocumentServerData
-			fi
 		fi
 	fi
 }
@@ -1459,10 +1440,11 @@ install_elasticsearch () {
 		
 		MEMORY_REQUIREMENTS=12228; #RAM ~12Gb
 		if [ ${TOTAL_MEMORY} -gt ${MEMORY_REQUIREMENTS} ]; then
-			args+=(-e "ES_JAVA_OPTS=-Xms4g -Xmx4g -Dlog4j2.formatMsgNoLookups=true");
+			args+=(-e "ES_JAVA_OPTS=-Xms4g -Xmx4g -Dlog4j2.formatMsgNoLookups=true -XX:-UseContainerSupport");
 		else
-			args+=(-e "ES_JAVA_OPTS=-Xms1g -Xmx1g -Dlog4j2.formatMsgNoLookups=true");
+			args+=(-e "ES_JAVA_OPTS=-Xms1g -Xmx1g -Dlog4j2.formatMsgNoLookups=true -XX:-UseContainerSupport");
 		fi
+		args+=(-e "JDK_JAVA_OPTIONS=-XX:-UseContainerSupport");
 
 		args+=(-e "indices.fielddata.cache.size=30%");
 		args+=(-e "indices.memory.index_buffer_size=30%");
@@ -1701,6 +1683,11 @@ install_community_server () {
 			exit 1;
 		else
 			docker exec -d ${COMMUNITY_CONTAINER_NAME} bash -c "[ -d /var/www/${PRODUCT}/Data/partnerdata ] && cp /var/www/${PRODUCT}/Data/partnerdata/* /var/www/${PRODUCT}/WebStudio/App_Data/static/partnerdata/ && rm -rf /var/www/${PRODUCT}/Data/partnerdata"
+			if [[ -n ${DOCUMENT_SERVER_ID} ]]; then
+				DOCUMENT_SERVER_UID=$(docker exec ${DOCUMENT_SERVER_ID} id -u ds)
+				docker exec ${COMMUNITY_SERVER_ID} chown -R ${DOCUMENT_SERVER_UID}:${PRODUCT} /var/www/${PRODUCT}/DocumentServerData
+				docker exec ${COMMUNITY_SERVER_ID} chmod -R g+w /var/www/${PRODUCT}/DocumentServerData
+			fi
 		fi
 	fi
 }
@@ -2327,7 +2314,7 @@ start_installation () {
 
 	if [ "$UPDATE" != "true" ]; then
 		check_ports
-		MYSQL_VERSION="8.0.29";
+		MYSQL_VERSION="8.4.0";
 
 		if [ "$INSTALL_MAIL_SERVER" == "true" ]; then
 			if [[ -z ${MAIL_DOMAIN_NAME} ]]; then

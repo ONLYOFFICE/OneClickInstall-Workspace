@@ -10,9 +10,8 @@ cat<<EOF
 
 EOF
 
-if [ -f /etc/needrestart/needrestart.conf ]; then
-	sed -e "s_#\$nrconf{restart}_\$nrconf{restart}_" -e "s_\(\$nrconf{restart} =\).*_\1 'a';_" -i /etc/needrestart/needrestart.conf
-fi
+export NEEDRESTART_MODE=a
+apt-get -y update
 
 if ! dpkg -l | grep -q "sudo"; then
 	apt-get install -yq sudo
@@ -36,4 +35,20 @@ fi
 
 if ! dpkg -l | grep -q "wget"; then
 	apt-get install -yq wget
+fi
+
+if ! command -v locale-gen &> /dev/null; then
+	apt-get install -yq locales
+fi
+
+if ! dpkg -l | grep -q "apt-transport-https"; then
+	apt-get install -yq apt-transport-https
+fi
+
+if ! dpkg -l | grep -q "software-properties-common"; then
+	apt-get install -yq software-properties-common || true
+fi
+
+if ! dpkg -s syslog-ng &>/dev/null; then
+	apt-get install -yq rsyslog
 fi
