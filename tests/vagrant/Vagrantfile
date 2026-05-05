@@ -21,8 +21,8 @@ Vagrant.configure("2") do |config|
 
     config.vm.provision "shell", path: './install.sh', :args => "#{ENV['DOWNLOAD_SCRIPT']} #{ENV['TEST_REPO']} #{ENV['ARGUMENTS']}"
 
-    config.vm.provision "shell", inline: "mkdir -p /home/vagrant/tests/vagrant && chown -R vagrant:vagrant /home/vagrant/tests"
-    config.vm.provision "file", source: "./post-install.sh", destination: "/home/vagrant/tests/vagrant/post-install.sh"
+    config.vm.provision "shell", run: "always", inline: "mkdir -p /home/vagrant/tests/vagrant && chown -R vagrant:vagrant /home/vagrant/tests"
+    config.vm.provision "file", run: "always", source: "./post-install.sh", destination: "/home/vagrant/tests/vagrant/post-install.sh"
 
     # Prevent SharedFoldersEnableSymlinksCreate errors
     config.vm.synced_folder ".", "/vagrant", disabled: true
