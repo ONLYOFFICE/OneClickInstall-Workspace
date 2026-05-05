@@ -129,6 +129,8 @@ main() {
   echo "${COLOR_BLUE}STEP 3: Installing${COLOR_RESET}"
   echo "${COLOR_BLUE}${LINE_SEPARATOR}${COLOR_RESET}"
   install_workspace
+
+  install -m 755 -D /tmp/post-install.sh /home/vagrant/tests/vagrant/post-install.sh 2>/dev/null || true
 }
 
 main
