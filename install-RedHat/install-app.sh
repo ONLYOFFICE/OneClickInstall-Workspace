@@ -99,12 +99,13 @@ if [ "${MYSQL_FIRST_TIME_INSTALL}" = "true" ]; then
 	fi
 # For UPDATE: migrate root from mysql_native_password to caching_sha2_password (removed in MySQL 8.4)
 elif [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
+	DIR="/var/www/${package_sysname}/WebStudio"
 	wait_cmd() { for i in $(seq 30); do "$@" >/dev/null 2>&1 && return; sleep 1; done; }
 
-	MYSQL_SERVER_HOST=$(grep -oP "Server=[^\";]*" $DIR/web.connections.config | head -1 | cut -d'=' -f2);
-	MYSQL_SERVER_DB_NAME=$(grep -oP "Database=[^\";]*" $DIR/web.connections.config | head -1 | cut -d'=' -f2);
-	MYSQL_SERVER_USER=$(grep -oP "User ID=[^\";]*" $DIR/web.connections.config | head -1 | cut -d'=' -f2);
-	MYSQL_SERVER_PASS=$(grep -oP "Password=[^\";]*" $DIR/web.connections.config | head -1 | cut -d'=' -f2);
+	MYSQL_SERVER_HOST=$(grep -oP "Server=[^\";]*" "$DIR/web.connections.config" | head -1 | cut -d'=' -f2);
+	MYSQL_SERVER_DB_NAME=$(grep -oP "Database=[^\";]*" "$DIR/web.connections.config" | head -1 | cut -d'=' -f2);
+	MYSQL_SERVER_USER=$(grep -oP "User ID=[^\";]*" "$DIR/web.connections.config" | head -1 | cut -d'=' -f2);
+	MYSQL_SERVER_PASS=$(grep -oP "Password=[^\";]*" "$DIR/web.connections.config" | head -1 | cut -d'=' -f2);
 
 	if { [ "$MYSQL_SERVER_HOST" = "localhost" ] || [ "$MYSQL_SERVER_HOST" = "127.0.0.1" ]; } && \
 	   mysql -h"$MYSQL_SERVER_HOST" -u"$MYSQL_SERVER_USER" -p"$MYSQL_SERVER_PASS" -e ";" 2>&1 | grep -q "mysql_native_password"; then
