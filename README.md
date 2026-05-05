@@ -203,13 +203,11 @@ sudo bash workspace-install.sh \
 
 The installation scripts support the following operating systems, which are **regularly tested** as part of our CI/CD pipelines:
 <!-- OS-SUPPORT-LIST-START -->
+- CentOS 9S
 - RHEL 9
-- CentOS 8 Stream
-- CentOS 9 Stream
-- Debian 10
-- Debian 11
+- CentOS 10
 - Debian 12
-- Ubuntu 20.04
+- Debian 13
 - Ubuntu 22.04
 - Ubuntu 24.04
 <!-- OS-SUPPORT-LIST-END -->
