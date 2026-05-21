@@ -124,80 +124,42 @@ elif [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 fi
 
 if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "false" ]; then
-	declare -x DS_PORT=8083
+	declare -x DS_PORT=${DS_PORT:-8083}
+	DS_COMMON_NAME=${DS_COMMON_NAME:-ds}
 
-	DS_RABBITMQ_HOST=localhost;
-	DS_RABBITMQ_USER=guest;
-	DS_RABBITMQ_PWD=guest;
-	
-	DS_REDIS_HOST=localhost;
-	
-	DS_COMMON_NAME=${DS_COMMON_NAME:-"ds"};
+	declare -x JWT_ENABLED=${JWT_ENABLED:-true}
+	declare -x JWT_SECRET="$(cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)"
+	declare -x JWT_HEADER="AuthorizationJwt"
 
-	DS_DB_HOST=localhost;
-	DS_DB_NAME=$DS_COMMON_NAME;
-	DS_DB_USER=$DS_COMMON_NAME;
-	DS_DB_PWD=$DS_COMMON_NAME;
-	
-	declare -x JWT_ENABLED=true;
-	declare -x JWT_SECRET="$(cat /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)";
-	declare -x JWT_HEADER="AuthorizationJwt";
-		
-	if ! su - postgres -s /bin/bash -c "psql -lqt" | cut -d \| -f 1 | grep -q ${DS_DB_NAME}; then
-		su - postgres -s /bin/bash -c "psql -c \"CREATE USER ${DS_DB_USER} WITH password '${DS_DB_PWD}';\""
-		su - postgres -s /bin/bash -c "psql -c \"CREATE DATABASE ${DS_DB_NAME} OWNER ${DS_DB_USER};\""
+	ds_configure_args=()
+	ds_pkg_name="${package_sysname}-documentserver"
+	if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
+		DS_DB_NAME=${DS_DB_NAME:-$DS_COMMON_NAME}
+		DS_DB_USER=${DS_DB_USER:-$DS_COMMON_NAME}
+		DS_DB_PWD=${DS_DB_PWD:-$DS_COMMON_NAME}
+
+		if ! su - postgres -s /bin/bash -c "psql -lqt" | cut -d \| -f 1 | grep -q "${DS_DB_NAME}"; then
+			su - postgres -s /bin/bash -c "psql -c \"CREATE USER ${DS_DB_USER} WITH password '${DS_DB_PWD}';\""
+			su - postgres -s /bin/bash -c "psql -c \"CREATE DATABASE ${DS_DB_NAME} OWNER ${DS_DB_USER};\""
+		fi
+
+		ds_configure_args=(
+			--databasehost "${DS_DB_HOST:-localhost}"
+			--databasename "$DS_DB_NAME"
+			--databaseuser "$DS_DB_USER"
+			--databasepassword "$DS_DB_PWD"
+			--amqphost "${DS_RABBITMQ_HOST:-localhost}"
+			--amqpuser "${DS_RABBITMQ_USER:-guest}"
+			--amqppassword "${DS_RABBITMQ_PWD:-guest}"
+			--redishost "${DS_REDIS_HOST:-localhost}"
+		)
+		ds_pkg_name+="-ee"
 	fi
-	
-	if [ "$INSTALLATION_TYPE" = "WORKSPACE" ]; then	
-		${package_manager} -y install ${package_sysname}-documentserver
-	else
-		${package_manager} -y install ${package_sysname}-documentserver-ee
-	fi
-	
-expect << EOF
-	
-	set timeout -1
-	log_user 1
-	
-	spawn documentserver-configure.sh
-	
-	expect "Configuring database access..."
-	
-	expect -re "Host"
-	send "\025$DS_DB_HOST\r"
-	
-	expect -re "Database name"
-	send "\025$DS_DB_NAME\r"
-	
-	expect -re "User"
-	send "\025$DS_DB_USER\r"
-	
-	expect -re "Password"
-	send "\025$DS_DB_PWD\r"
-	
-	if { "${INSTALLATION_TYPE}" == "WORKSPACE_ENTERPRISE" } {
-		expect "Configuring redis access..."
-		send "\025$DS_REDIS_HOST\r"
-	}
-	
-	expect "Configuring AMQP access... "
-	expect -re "Host"
-	send "\025$DS_RABBITMQ_HOST\r"
-	
-	expect -re "User"
-	send "\025$DS_RABBITMQ_USER\r"
-	
-	expect -re "Password"
-	send "\025$DS_RABBITMQ_PWD\r"
-	
-	expect eof
-	
-EOF
-	
-	systemctl restart nginx
-	systemctl enable nginx
 
-	DOCUMENT_SERVER_INSTALLED="true";
+	${package_manager} -y install "$ds_pkg_name"
+	documentserver-configure.sh "${ds_configure_args[@]}"
+
+	DOCUMENT_SERVER_INSTALLED="true"
 fi
 
 if [ "$CONTROL_PANEL_INSTALLED" = "false" ]; then
@@ -248,10 +210,10 @@ fi
 
 if [ "$COMMUNITY_SERVER_INSTALLED" = "false" ]; then
 
-	CS_DB_HOST=${MYSQL_SERVER_HOST};
-	CS_DB_NAME=${MYSQL_SERVER_DB_NAME};
-	CS_DB_USER=${MYSQL_SERVER_USER};
-	CS_DB_PWD=${MYSQL_SERVER_PASS};
+	CS_DB_HOST=${MYSQL_SERVER_HOST}
+	CS_DB_NAME=${MYSQL_SERVER_DB_NAME}
+	CS_DB_USER=${MYSQL_SERVER_USER}
+	CS_DB_PWD=${MYSQL_SERVER_PASS}
 
 	${package_manager} -y install ${package_sysname}-communityserver
 	
@@ -282,10 +244,10 @@ fi
 
 if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$XMPP_SERVER_INSTALLED" = "false" ]; then
 
-	XMPP_SERVER_DB_HOST=${MYSQL_SERVER_HOST};
-	XMPP_SERVER_DB_NAME=${MYSQL_SERVER_DB_NAME};
-	XMPP_SERVER_DB_USER=${MYSQL_SERVER_USER};
-	XMPP_SERVER_DB_PWD=${MYSQL_SERVER_PASS};
+	XMPP_SERVER_DB_HOST=${MYSQL_SERVER_HOST}
+	XMPP_SERVER_DB_NAME=${MYSQL_SERVER_DB_NAME}
+	XMPP_SERVER_DB_USER=${MYSQL_SERVER_USER}
+	XMPP_SERVER_DB_PWD=${MYSQL_SERVER_PASS}
 
 	${package_manager} -y install ${package_sysname}-xmppserver
 	

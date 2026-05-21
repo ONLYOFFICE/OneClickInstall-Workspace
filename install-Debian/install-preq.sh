@@ -127,14 +127,16 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				htop \
 				nano \
 				dnsutils \
-				postgresql \
 				redis-server \
-				rabbitmq-server \
 				apt-transport-https \
 				python3-pip \
 				nginx-extras \
 				expect \
 				dotnet-sdk-8.0
+
+if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
+	apt-get install -yq rabbitmq-server postgresql
+fi
 
 # Remove default-authentication-plugin from MySQL config — option removed in MySQL 8.4, causes startup failure
 find /etc/mysql -name "*.cnf" -exec sed -i '/^default-authentication-plugin/d' {} \; 2>/dev/null || true

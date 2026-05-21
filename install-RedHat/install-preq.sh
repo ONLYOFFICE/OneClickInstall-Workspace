@@ -19,7 +19,6 @@ DIST=$( (rpm -q --whatprovides redhat-release || rpm -q --whatprovides centos-re
 REV=$(grep -oP '(?<=release )\d+' /etc/redhat-release)
 MONOREV=$REV
 
-{ yum check-update postgresql; PSQLExitCode=$?; } || true 
 { yum check-update "$DIST"*-release; exitCode=$?; } || true #Checking for distribution update
 
 UPDATE_AVAILABLE_CODE=100
@@ -63,26 +62,6 @@ fi
 [ "$REV" = "9" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
 [ "$REV" = "8" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"}
 REDIS_PACKAGE="${REDIS_PACKAGE:-redis}"
-
-#add rabbitmq & erlang repo
-curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
-curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$REV bash
-
-if rpm -q rabbitmq-server; then
-	if [ "$(yum list installed rabbitmq-server | awk '/rabbitmq-server/ {gsub(/@/, "", $NF); print $NF}')" != "$(repoquery rabbitmq-server --qf='%{repoid}' | tail -n 1)" ]; then
-		res_rabbitmq_update
-		echo "$RES_RABBITMQ_VERSION"
-		echo "$RES_RABBITMQ_REMINDER"
-		echo "$RES_RABBITMQ_INSTALLATION"
-		if read_continue_installation; then
-			rm -rf /var/lib/rabbitmq/mnesia/$(rabbitmqctl eval "node().")
-			yum -y remove rabbitmq-server erlang* 
-			[ -f "/etc/yum.repos.d/rabbitmq-server.repo" ] && rm -f /etc/yum.repos.d/rabbitmq-server.repo || true
-		else
-			rm -f /etc/yum.repos.d/rabbitmq_*
-		fi
-	fi
-fi
 
 #add dotnet repo
 if [ "$REV" = "7" ] || [[ $DIST != "redhat" && $REV = "8" ]]; then
@@ -154,9 +133,6 @@ yum -y install epel-release \
 			expect \
 			nano \
 			htop \
-			postgresql \
-			postgresql-server \
-			rabbitmq-server \
 			${REDIS_PACKAGE} \
 			${FFMPEG_PACKAGE:-ffmpeg} \
 			mysql-community-server \
@@ -191,18 +167,45 @@ if ! command -v certbot &>/dev/null; then
   fi
 fi
 			
-if [[ $PSQLExitCode -eq $UPDATE_AVAILABLE_CODE ]]; then
-	yum -y install postgresql-upgrade 
-	postgresql-setup --upgrade || true
-fi
-postgresql-setup --initdb || true
-
-sed -E -i "s/(host\s+(all|replication)\s+all\s+(127\.0\.0\.1\/32|\:\:1\/128)\s+)(ident|trust|md5)/\1scram-sha-256/" /var/lib/pgsql/data/pg_hba.conf
-sed -i "s/^#\?password_encryption = .*/password_encryption = 'scram-sha-256'/" /var/lib/pgsql/data/postgresql.conf
-
 if ! command -v semanage &> /dev/null; then
 	yum install -y policycoreutils-python || yum install -y policycoreutils-python-utils
 fi 
 semanage permissive -a httpd_t
 
-package_services="rabbitmq-server postgresql ${REDIS_PACKAGE} mysqld elasticsearch"
+package_services="${REDIS_PACKAGE} mysqld elasticsearch"
+
+if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
+	{ yum check-update postgresql; PSQLExitCode=$?; } || true
+
+	#add rabbitmq & erlang repo
+	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
+	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$REV bash
+
+	if rpm -q rabbitmq-server; then
+		if [ "$(yum list installed rabbitmq-server | awk '/rabbitmq-server/ {gsub(/@/, "", $NF); print $NF}')" != "$(repoquery rabbitmq-server --qf='%{repoid}' | tail -n 1)" ]; then
+			res_rabbitmq_update
+			echo "$RES_RABBITMQ_VERSION"
+			echo "$RES_RABBITMQ_REMINDER"
+			echo "$RES_RABBITMQ_INSTALLATION"
+			if read_continue_installation; then
+				rm -rf /var/lib/rabbitmq/mnesia/$(rabbitmqctl eval "node().")
+				yum -y remove rabbitmq-server erlang*
+				[ -f "/etc/yum.repos.d/rabbitmq-server.repo" ] && rm -f /etc/yum.repos.d/rabbitmq-server.repo || true
+			else
+				rm -f /etc/yum.repos.d/rabbitmq_*
+			fi
+		fi
+	fi
+
+	yum -y install rabbitmq-server postgresql postgresql-server
+	if [[ $PSQLExitCode -eq $UPDATE_AVAILABLE_CODE ]]; then
+		yum -y install postgresql-upgrade
+		postgresql-setup --upgrade || true
+	fi
+	postgresql-setup --initdb || true
+
+	sed -E -i "s/(host\s+(all|replication)\s+all\s+(127\.0\.0\.1\/32|\:\:1\/128)\s+)(ident|trust|md5)/\1scram-sha-256/" /var/lib/pgsql/data/pg_hba.conf
+	sed -i "s/^#\?password_encryption = .*/password_encryption = 'scram-sha-256'/" /var/lib/pgsql/data/postgresql.conf
+
+	package_services+=" rabbitmq-server postgresql"
+fi
