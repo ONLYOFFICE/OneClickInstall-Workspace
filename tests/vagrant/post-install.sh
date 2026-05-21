@@ -30,7 +30,6 @@ SERVICES_SYSTEMD=(
   "onlyofficeWebDav.service"
   "ds-converter.service"
   "ds-docservice.service"
-  "ds-metrics.service"
 )
 
 get_colors() {
