@@ -27,7 +27,7 @@ while [ "$1" != "" ]; do
 	shift
 done
 
-PARAMETERS="$PARAMETERS -it WORKSPACE_ENTERPRISE";
+PARAMETERS="-it WORKSPACE_ENTERPRISE $PARAMETERS";
 
 root_checking () {
 	if [ ! $( id -u ) -eq 0 ]; then
