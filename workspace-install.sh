@@ -39,7 +39,7 @@ while [ "$1" != "" ]; do
 	shift
 done
 
-PARAMETERS="$PARAMETERS -it WORKSPACE";
+PARAMETERS="-it WORKSPACE $PARAMETERS";
 
 root_checking () {
 	if [ ! $( id -u ) -eq 0 ]; then
