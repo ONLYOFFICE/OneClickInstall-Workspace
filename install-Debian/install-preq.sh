@@ -130,7 +130,7 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				redis-server \
 				apt-transport-https \
 				python3-pip \
-				nginx-extras \
+				nginx \
 				expect \
 				dotnet-sdk-8.0
 
