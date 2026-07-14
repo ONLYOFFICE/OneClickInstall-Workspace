@@ -4,7 +4,7 @@ ONLYOFFICE OneClickInstall-Workspace — one-click installer scripts for ONLYOFF
 
 ## Tech Stack
 
-Bash/Shell, Docker, MySQL 5.5, Elasticsearch 7.16.3, Mono/.NET, Redis, RabbitMQ, Vagrant (testing), GitHub Actions
+Bash/Shell, Docker, MySQL (8.x for new installs), Elasticsearch, Mono/.NET, Redis, RabbitMQ, Vagrant (testing), GitHub Actions
 
 ## Project Structure
 
@@ -12,7 +12,7 @@ Bash/Shell, Docker, MySQL 5.5, Elasticsearch 7.16.3, Mono/.NET, Redis, RabbitMQ,
 workspace-install.sh              — Workspace Edition entry point
 workspace-enterprise-install.sh   — Enterprise Edition entry point
 groups-install.sh                 — Groups (Community Server) entry point
-install.sh                        — Main Docker installer (2444 lines)
+install.sh                        — Main Docker installer
 install-Debian.sh                 — Debian package installer wrapper
 install-RedHat.sh                 — RedHat package installer wrapper
 install-Debian/                   — Debian-specific scripts
@@ -73,7 +73,7 @@ TEST_CASE='--local-install' OS='base-ubuntu2204' vagrant up
 sudo bash install.sh --skiphardwarecheck true
 ```
 
-Supported OS: RHEL 9, CentOS 8/9 Stream, Debian 10-12, Ubuntu 20.04/22.04/24.04
+Supported OS: RHEL 9, CentOS 9 Stream/10, Debian 12/13, Ubuntu 22.04/24.04 (authoritative list in README, auto-updated by CI)
 
 ## Key Patterns
 
