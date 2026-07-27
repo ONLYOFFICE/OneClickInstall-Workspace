@@ -770,23 +770,25 @@ check_kernel () {
 
 check_hardware () {
 	AVAILABLE_DISK_SPACE=$(df -m /  | tail -1 | awk '{ print $4 }');
-
-	if [ ${AVAILABLE_DISK_SPACE} -lt ${DISK_REQUIREMENTS} ]; then
-		echo "Minimal requirements are not met: need at least $DISK_REQUIREMENTS MB of free HDD space"
-		exit 1;
-	fi
-
 	TOTAL_MEMORY=$(free --mega | grep -oP '\d+' | head -n 1);
-
-	if [ ${TOTAL_MEMORY} -lt ${MEMORY_REQUIREMENTS} ]; then
-		echo "Minimal requirements are not met: need at least $MEMORY_REQUIREMENTS MB of RAM"
-		exit 1;
-	fi
-
 	CPU_CORES_NUMBER=$(cat /proc/cpuinfo | grep processor | wc -l);
 
+	REQUIREMENTS_NOT_MET="";
+
+	if [ ${AVAILABLE_DISK_SPACE} -lt ${DISK_REQUIREMENTS} ]; then
+		REQUIREMENTS_NOT_MET="${REQUIREMENTS_NOT_MET}\n  - at least $DISK_REQUIREMENTS MB of free HDD space (available: ${AVAILABLE_DISK_SPACE} MB)";
+	fi
+
+	if [ ${TOTAL_MEMORY} -lt ${MEMORY_REQUIREMENTS} ]; then
+		REQUIREMENTS_NOT_MET="${REQUIREMENTS_NOT_MET}\n  - at least $MEMORY_REQUIREMENTS MB of RAM (available: ${TOTAL_MEMORY} MB)";
+	fi
+
 	if [ ${CPU_CORES_NUMBER} -lt ${CORE_REQUIREMENTS} ]; then
-		echo "The system does not meet the minimal hardware requirements. CPU with at least $CORE_REQUIREMENTS cores is required"
+		REQUIREMENTS_NOT_MET="${REQUIREMENTS_NOT_MET}\n  - a CPU with at least $CORE_REQUIREMENTS cores (available: ${CPU_CORES_NUMBER})";
+	fi
+
+	if [ -n "${REQUIREMENTS_NOT_MET}" ]; then
+		printf "Minimal requirements are not met, your system needs:%b\n\nTo skip this check, use the --skiphardwarecheck true parameter\n" "${REQUIREMENTS_NOT_MET}";
 		exit 1;
 	fi
 }
