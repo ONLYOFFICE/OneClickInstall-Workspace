@@ -12,7 +12,7 @@ RES_APP_CHECK_PORTS="uses ports"
 RES_CHECK_PORTS="please, make sure that the ports are free.";
 RES_INSTALL_SUCCESS="Thank you for installing ONLYOFFICE.";
 RES_PROPOSAL="You can now configure your portal using the Control Panel";
-RES_QUESTIONS="In case you have any questions contact us via http://support.onlyoffice.com or visit our forum at http://forum.onlyoffice.com"
+RES_QUESTIONS="In case you have any questions contact us via http://support.onlyoffice.com or visit our forum at http://community.onlyoffice.com"
 RES_MARIADB="To continue the installation, you need to remove MariaDB"
 
 RES_CHOICE="Please, enter Y or N"

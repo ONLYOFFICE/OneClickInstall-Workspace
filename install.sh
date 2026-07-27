@@ -2423,7 +2423,7 @@ start_installation () {
 	echo ""
 	echo "Thank you for installing ONLYOFFICE."
 	echo "You can now configure your portal and add Mail Server to your installation (in case you skipped it earlier) using the Control Panel"
-	echo "In case you have any questions contact us via http://support.onlyoffice.com or visit our forum at http://forum.onlyoffice.com"
+	echo "In case you have any questions contact us via http://support.onlyoffice.com or visit our forum at http://community.onlyoffice.com"
 	echo ""
 
 	exit 0;

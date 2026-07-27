@@ -220,7 +220,7 @@ The installation scripts support the following operating systems, which are **re
 | Docs installer   | <https://github.com/ONLYOFFICE/OneClickInstall-Docs>                  |
 | Help Center      | <https://helpcenter.onlyoffice.com/workspace/installation>            |
 | Product page     | <https://www.onlyoffice.com/workspace.aspx>                           |
-| Community Forum  | <https://forum.onlyoffice.com>                                        |
+| Community Forum  | <https://community.onlyoffice.com>                                    |
 | Stack Overflow   | <https://stackoverflow.com/questions/tagged/onlyoffice>               |
 
 ## 📝 License
