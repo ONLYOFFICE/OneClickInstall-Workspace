@@ -81,6 +81,10 @@ if grep -q buster /etc/os-release; then
         -e 's|http://ftp\.uk\.debian\.org/debian/?|http://archive.debian.org/debian/|g' {} +
 fi
 
+# Suppress interactive apt/needrestart prompts during automated installs
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+
 apt-get update -y --allow-releaseinfo-change
 
 if [ $(dpkg-query -W -f='${Status}' curl 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
