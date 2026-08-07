@@ -90,6 +90,25 @@ yum localinstall -y https://repo.mysql.com/mysql84-community-release-el${REV}-${
 rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF" || true
 curl -fsSL https://download.mono-project.com/repo/centos$MONOREV-stable.repo | tee /etc/yum.repos.d/mono-centos$MONOREV-stable.repo
 
+# mono-complete's libgdiplus0 needs libtiff.so.5, dropped from CentOS 10 with no upstream compat package; vendor it from CentOS Stream 9
+if [ "$REV" = "10" ] && ! rpm -q --whatprovides 'libtiff.so.5()(64bit)' &>/dev/null; then
+	COMPAT_DIR=$(mktemp -d); mkdir -p "$COMPAT_DIR/root"
+	LIBTIFF_EL9_RPM=$(curl -fsSL "https://mirror.stream.centos.org/9-stream/AppStream/$(arch)/os/Packages/" | grep -oP "libtiff-[0-9][^\"< ]+\.$(arch)\.rpm" | sort -V | tail -n 1)
+
+	yum -y install rpm-build
+	curl -fsSL -o "$COMPAT_DIR/libtiff.rpm" "https://mirror.stream.centos.org/9-stream/AppStream/$(arch)/os/Packages/${LIBTIFF_EL9_RPM}"
+	(cd "$COMPAT_DIR/root" && rpm2cpio "$COMPAT_DIR/libtiff.rpm" | cpio -idm --quiet './usr/lib64/libtiff.so.5*')
+
+	printf '%s\n' "Name: compat-libtiff5" "Version: 1" "Release: 1" "Summary: Provides libtiff.so.5 for mono-complete on EL10" \
+		"License: BSD" "BuildArch: $(arch)" "AutoReq: no" "Provides: libtiff.so.5()(64bit)" \
+		"%description" "%files" "/usr/lib64/libtiff.so.5*" \
+		> "$COMPAT_DIR/compat-libtiff5.spec"
+
+	rpmbuild -bb --define "_topdir $COMPAT_DIR/rpmbuild" --buildroot "$COMPAT_DIR/root" "$COMPAT_DIR/compat-libtiff5.spec"
+	yum -y install "$COMPAT_DIR/rpmbuild/RPMS/$(arch)/compat-libtiff5-1-1.$(arch).rpm"
+	rm -rf "$COMPAT_DIR"
+fi
+
 # add elasticsearch repo
 if [ -z "$ELASTICSEARCH_REPOSITORY" ]; then
     rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
