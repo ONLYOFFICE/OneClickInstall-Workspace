@@ -49,7 +49,7 @@ if [[ "$DIST" == "redhat" && "$REV" -ge 9 ]]; then
 fi
 
 if [ "$REV" = "10" ]; then
-	REV="9"; MONOREV="8"; REDIS_PACKAGE=valkey; FFMPEG_PACKAGE=ffmpeg-free
+	MONOREV="8"; REDIS_PACKAGE=valkey; FFMPEG_PACKAGE=ffmpeg-free
 	YUM_EXTRA_PARAMS="--nogpgcheck --exclude=mariadb* --exclude=mysql8.4*"
 elif [ "$REV" = "9" ]; then
 	MONOREV="8"
@@ -59,7 +59,7 @@ elif [ "$REV" = "9" ]; then
 elif [ "$REV" = "8" ]; then
 	[ "$DIST" != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
 fi
-[ "$REV" = "9" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
+[ "$REV" = "10" ] || [ "$REV" = "9" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
 [ "$REV" = "8" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"}
 REDIS_PACKAGE="${REDIS_PACKAGE:-redis}"
 
@@ -177,9 +177,10 @@ package_services="${REDIS_PACKAGE} mysqld elasticsearch"
 if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
 	{ yum check-update postgresql; PSQLExitCode=$?; } || true
 
-	#add rabbitmq & erlang repo
-	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
-	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$REV bash
+	#add rabbitmq & erlang repo; packagecloud has no el/10 build yet, el/9 packages install fine on el10
+	RABBITMQ_DIST=$REV; [ "$REV" = "10" ] && RABBITMQ_DIST="9"
+	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$RABBITMQ_DIST bash
+	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$RABBITMQ_DIST bash
 
 	if rpm -q rabbitmq-server; then
 		if [ "$(yum list installed rabbitmq-server | awk '/rabbitmq-server/ {gsub(/@/, "", $NF); print $NF}')" != "$(repoquery rabbitmq-server --qf='%{repoid}' | tail -n 1)" ]; then
