@@ -9,7 +9,7 @@ RES_APP_CHECK_PORTS="uses ports"
 RES_CHECK_PORTS="please, make sure that the ports are free.";
 RES_INSTALL_SUCCESS="Thank you for installing ONLYOFFICE.";
 RES_PROPOSAL="You can now configure your portal using the Control Panel";
-RES_QUESTIONS="In case you have any questions contact us via http://support.onlyoffice.com or visit our forum at http://forum.onlyoffice.com"
+RES_QUESTIONS="In case you have any questions contact us via http://support.onlyoffice.com or visit our forum at http://community.onlyoffice.com"
 
 while [ "$1" != "" ]; do
 	case $1 in
@@ -80,6 +80,10 @@ if grep -q buster /etc/os-release; then
         -e 's|http://security\.debian\.org/debian-security/?|http://archive.debian.org/debian-security/|g' \
         -e 's|http://ftp\.uk\.debian\.org/debian/?|http://archive.debian.org/debian/|g' {} +
 fi
+
+# Suppress interactive apt/needrestart prompts during automated installs
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
 
 apt-get update -y --allow-releaseinfo-change
 

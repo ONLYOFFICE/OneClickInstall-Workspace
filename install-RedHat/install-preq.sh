@@ -49,7 +49,7 @@ if [[ "$DIST" == "redhat" && "$REV" -ge 9 ]]; then
 fi
 
 if [ "$REV" = "10" ]; then
-	REV="9"; MONOREV="8"; REDIS_PACKAGE=valkey; FFMPEG_PACKAGE=ffmpeg-free
+	MONOREV="8"; REDIS_PACKAGE=valkey; FFMPEG_PACKAGE=ffmpeg-free
 	YUM_EXTRA_PARAMS="--nogpgcheck --exclude=mariadb* --exclude=mysql8.4*"
 elif [ "$REV" = "9" ]; then
 	MONOREV="8"
@@ -59,7 +59,7 @@ elif [ "$REV" = "9" ]; then
 elif [ "$REV" = "8" ]; then
 	[ "$DIST" != "redhat" ] && POWERTOOLS_REPO="--enablerepo=powertools" || /usr/bin/crb enable
 fi
-[ "$REV" = "9" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
+[ "$REV" = "10" ] || [ "$REV" = "9" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-8"}
 [ "$REV" = "8" ] && hyperfastcgi_version=${hyperfastcgi_version:-"0.4-7"}
 REDIS_PACKAGE="${REDIS_PACKAGE:-redis}"
 
@@ -89,6 +89,25 @@ yum localinstall -y https://repo.mysql.com/mysql84-community-release-el${REV}-${
 #add mono repo
 rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF" || true
 curl -fsSL https://download.mono-project.com/repo/centos$MONOREV-stable.repo | tee /etc/yum.repos.d/mono-centos$MONOREV-stable.repo
+
+# mono-complete's libgdiplus0 needs libtiff.so.5, dropped from CentOS 10 with no upstream compat package; vendor it from CentOS Stream 9
+if [ "$REV" = "10" ] && ! rpm -q --whatprovides 'libtiff.so.5()(64bit)' &>/dev/null; then
+	COMPAT_DIR=$(mktemp -d); mkdir -p "$COMPAT_DIR/root"
+	LIBTIFF_EL9_RPM=$(curl -fsSL "https://mirror.stream.centos.org/9-stream/AppStream/$(arch)/os/Packages/" | grep -oP "libtiff-[0-9][^\"< ]+\.$(arch)\.rpm" | sort -V | tail -n 1)
+
+	yum -y install rpm-build
+	curl -fsSL -o "$COMPAT_DIR/libtiff.rpm" "https://mirror.stream.centos.org/9-stream/AppStream/$(arch)/os/Packages/${LIBTIFF_EL9_RPM}"
+	(cd "$COMPAT_DIR/root" && rpm2cpio "$COMPAT_DIR/libtiff.rpm" | cpio -idm --quiet './usr/lib64/libtiff.so.5*')
+
+	printf '%s\n' "Name: compat-libtiff5" "Version: 1" "Release: 1" "Summary: Provides libtiff.so.5 for mono-complete on EL10" \
+		"License: BSD" "BuildArch: $(arch)" "AutoReq: no" "Provides: libtiff.so.5()(64bit)" \
+		"%description" "%files" "/usr/lib64/libtiff.so.5*" \
+		> "$COMPAT_DIR/compat-libtiff5.spec"
+
+	rpmbuild -bb --define "_topdir $COMPAT_DIR/rpmbuild" --buildroot "$COMPAT_DIR/root" "$COMPAT_DIR/compat-libtiff5.spec"
+	yum -y install "$COMPAT_DIR/rpmbuild/RPMS/$(arch)/compat-libtiff5-1-1.$(arch).rpm"
+	rm -rf "$COMPAT_DIR"
+fi
 
 # add elasticsearch repo
 if [ -z "$ELASTICSEARCH_REPOSITORY" ]; then
@@ -177,9 +196,10 @@ package_services="${REDIS_PACKAGE} mysqld elasticsearch"
 if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
 	{ yum check-update postgresql; PSQLExitCode=$?; } || true
 
-	#add rabbitmq & erlang repo
-	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$REV bash
-	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$REV bash
+	#add rabbitmq & erlang repo; packagecloud has no el/10 build yet, el/9 packages install fine on el10
+	RABBITMQ_DIST=$REV; [ "$REV" = "10" ] && RABBITMQ_DIST="9"
+	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/rabbitmq-server/script.rpm.sh | os=centos dist=$RABBITMQ_DIST bash
+	curl -fsSL https://packagecloud.io/install/repositories/rabbitmq/erlang/script.rpm.sh | os=centos dist=$RABBITMQ_DIST bash
 
 	if rpm -q rabbitmq-server; then
 		if [ "$(yum list installed rabbitmq-server | awk '/rabbitmq-server/ {gsub(/@/, "", $NF); print $NF}')" != "$(repoquery rabbitmq-server --qf='%{repoid}' | tail -n 1)" ]; then

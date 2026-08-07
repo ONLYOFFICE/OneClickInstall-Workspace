@@ -10,6 +10,8 @@ cat<<EOF
 
 EOF
 
+# Suppress interactive apt/needrestart prompts during automated installs
+export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a
 apt-get -y update
 
