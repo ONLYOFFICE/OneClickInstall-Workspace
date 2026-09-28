@@ -86,6 +86,10 @@ END
 MYSQL_REPO_VERSION="$(curl -fsSL https://repo.mysql.com | grep -oP "mysql84-community-release-el${REV}-\K.*" | grep -o '^[^.]*' | sort -n | tail -n1)"
 yum localinstall -y https://repo.mysql.com/mysql84-community-release-el${REV}-${MYSQL_REPO_VERSION}.noarch.rpm || true
 
+# Oracle promoted MySQL 9.7 to LTS and disabled 8.4 by default in this release package; pin back to 8.4 to avoid an unplanned major-version upgrade
+yum-config-manager --disable 'mysql-*-lts-community' 'mysql-innovation-community' 'mysql-tools-innovation-community' 'mysql-cluster-innovation-community' &>/dev/null || true
+yum-config-manager --enable mysql-8.4-lts-community mysql-tools-8.4-lts-community &>/dev/null || true
+
 #add mono repo
 rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF" || true
 curl -fsSL https://download.mono-project.com/repo/centos$MONOREV-stable.repo | tee /etc/yum.repos.d/mono-centos$MONOREV-stable.repo
