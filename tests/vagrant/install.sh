@@ -49,7 +49,11 @@ END
 
 prepare_vm() {
   # DNS may be not ready right after the VM boot
-  timeout 120 bash -c 'until getent hosts download.onlyoffice.com >/dev/null; do sleep 2; done' || { echo "${COLOR_RED}download.onlyoffice.com cannot be resolved${COLOR_RESET}"; exit 1; }
+  timeout 120 bash -c 'until getent hosts download.onlyoffice.com >/dev/null; do sleep 2; done' || {
+    echo "${COLOR_RED}download.onlyoffice.com cannot be resolved${COLOR_RESET}"
+    cat /etc/resolv.conf; resolvectl status 2>/dev/null || true; ip route; getent hosts github.com || true
+    exit 1
+  }
 
   if ! command -v curl >/dev/null 2>&1; then
     (command -v apt-get >/dev/null 2>&1 && apt-get update -y && apt-get install -y curl) || (command -v dnf >/dev/null 2>&1 && dnf install -y curl)
