@@ -63,10 +63,12 @@ if [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 
 	if { [ "$MYSQL_SERVER_HOST" = "localhost" ] || [ "$MYSQL_SERVER_HOST" = "127.0.0.1" ]; } && \
 	   mysql -h"$MYSQL_SERVER_HOST" -u"$MYSQL_SERVER_USER" -p"$MYSQL_SERVER_PASS" -e ";" 2>&1 | grep -q "mysql_native_password"; then
-		systemctl stop mysql || { systemctl kill mysql; sleep 5; }
+		# A pending start job can cancel the stop, so repeat it until no mysqld is left
+		timeout 60 bash -c "while pgrep -x mysqld >/dev/null; do systemctl stop mysql 2>/dev/null || systemctl kill mysql; sleep 1; done"
 		mysqld --user=mysql --skip-grant-tables --skip-networking &
 		MYSQLD_TMP_PID=$!
 		wait_cmd mysqladmin ping --silent
+		kill -0 "$MYSQLD_TMP_PID" 2>/dev/null || { echo "Temporary mysqld failed to start"; exit 1; }
 		mysql -uroot -e "UPDATE mysql.user SET plugin='caching_sha2_password', authentication_string='' WHERE User='${MYSQL_SERVER_USER}';"
 		kill "$MYSQLD_TMP_PID" 2>/dev/null || true; wait "$MYSQLD_TMP_PID" 2>/dev/null || true
 
