@@ -47,9 +47,19 @@ enabled=1
 END
 }
 
+wait_dns() {
+  timeout "$1" bash -c 'until getent hosts download.onlyoffice.com >/dev/null; do sleep 2; done'
+}
+
+fix_dns() {
+  # Boxes may carry static public DNS servers that are unreachable from CI, so use only the VirtualBox NAT one
+  local iface
+  iface=$(ip route show default | awk '{print $5; exit}')
+  command -v resolvectl >/dev/null 2>&1 && resolvectl dns "$iface" 10.0.2.3 && resolvectl flush-caches
+}
+
 prepare_vm() {
-  # DNS may be not ready right after the VM boot
-  timeout 120 bash -c 'until getent hosts download.onlyoffice.com >/dev/null; do sleep 2; done' || {
+  wait_dns 30 || { fix_dns || true; wait_dns 60; } || {
     echo "${COLOR_RED}download.onlyoffice.com cannot be resolved${COLOR_RESET}"
     cat /etc/resolv.conf; resolvectl status 2>/dev/null || true; ip route; getent hosts github.com || true
     exit 1
