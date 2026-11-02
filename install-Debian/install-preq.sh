@@ -36,7 +36,8 @@ if [ -z "$ELASTICSEARCH_REPOSITORY" ]; then
 fi
 
 # add nodejs repo
-curl -fsSL https://deb.nodesource.com/setup_16.x | sed '/sleep/d' | bash -
+NODEJS_MAJOR=24
+curl -fsSL https://deb.nodesource.com/setup_${NODEJS_MAJOR}.x | sed '/sleep/d' | bash -
 
 #add nginx repo
 if [[ ! "$DISTRIB_CODENAME" =~ ^(noble|trixie)$ ]]; then

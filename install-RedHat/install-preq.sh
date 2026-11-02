@@ -139,7 +139,13 @@ module_hotfixes=true
 END
 
 # add nodejs repo
-curl -fsSL https://rpm.nodesource.com/setup_16.x | sed '/update -y\|sleep/d' | bash - || true
+NODEJS_MAJOR=24
+curl -fsSL https://rpm.nodesource.com/setup_${NODEJS_MAJOR}.x | sed '/update -y\|sleep/d' | bash - || true
+
+# Distro Node.js and npm conflict with the NodeSource packages, so replace them without removing the packages that depend on nodejs
+if [ -f /etc/yum.repos.d/nodesource-nodejs.repo ] && rpm -q nodejs >/dev/null 2>&1 && [ "$(rpm -q --qf '%{VERSION}' nodejs | cut -d. -f1)" != "${NODEJS_MAJOR}" ]; then
+	rpm -e --nodeps $(rpm -qa --qf '%{NAME}\n' | grep -xE 'nodejs|npm|nodejs-npm|nodejs-docs|nodejs-libs|nodejs-full-i18n')
+fi
 
 if ! rpm -q mysql-community-server; then
 	MYSQL_FIRST_TIME_INSTALL="true";
@@ -172,6 +178,8 @@ yum -y install epel-release \
 			dotnet-sdk-8.0 \
 			${YUM_EXTRA_PARAMS} ${TESTING_REPO}
 			
+[ "$(rpm -q --qf '%{VERSION}' nodejs | cut -d. -f1)" = "${NODEJS_MAJOR}" ] || { echo "Node.js ${NODEJS_MAJOR} was not installed, check the NodeSource repository"; exit 1; }
+
 yum versionlock mono-complete
 rpm -q elasticsearch || yum install -y elasticsearch-7.16.3-1
 
