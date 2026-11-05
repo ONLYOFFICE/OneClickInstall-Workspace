@@ -13,8 +13,8 @@ EOF
 if dpkg -l | grep -q "${package_sysname}-communityserver"; then
 	echo "${package_sysname}-communityserver $RES_APP_INSTALLED"
 	COMMUNITY_SERVER_INSTALLED="true";
-elif [ $UPDATE != "true" ] && netstat -lnp | awk '{print $4}' | grep -qE ":80$|:443$|:5280$|:9888$|:9866$|:9871$|:9882$|:25$"; then
-	echo "${package_sysname}-communityserver $RES_APP_CHECK_PORTS: 80, 443, 5280, 9888, 9866, 9871, 9882, 25";
+elif [ $UPDATE != "true" ] && netstat -lnp | awk '{print $4}' | grep -qE ":80$|:443$|:5280$|:9888$|:9866$|:9871$|:9882$"; then
+	echo "${package_sysname}-communityserver $RES_APP_CHECK_PORTS: 80, 443, 5280, 9888, 9866, 9871, 9882";
 	echo "$RES_CHECK_PORTS"
 	exit
 else
