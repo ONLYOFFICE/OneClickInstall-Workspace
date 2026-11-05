@@ -520,6 +520,8 @@ while [ "$1" != "" ]; do
 			echo "--skiphardwarecheck       <true|false>           Skip hardware check"
 			echo "--skipversioncheck        <true|false>           Skip version check during update"
 			echo "--skipdomaincheck         <true|false>           Skip mail domain check"
+			echo "--localscripts            <true|false>           Use scripts from the current directory instead of downloading them"
+			echo "--gitbranch               <BRANCH>               Download scripts from the given git branch (ignored with --localscripts true)"
 			echo
 			echo "EXAMPLES:"
 			echo "    Install all components with default settings:"

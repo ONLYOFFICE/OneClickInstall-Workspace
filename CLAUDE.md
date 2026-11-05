@@ -49,6 +49,8 @@ sudo bash workspace-install.sh
 --installdocs         true|false|pull   (Document Server)
 --installmailserver   true|false|pull   (Mail Server)
 --makeswap            true|false        (default: true)
+--localscripts        true|false        (use scripts from the current dir instead of downloading)
+--gitbranch           <BRANCH>          (download scripts from this branch of OneClickInstall-Workspace)
 ```
 
 ## Docker Services

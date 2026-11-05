@@ -28,6 +28,13 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
+		-gb | --gitbranch )
+			if [ "$2" != "" ]; then
+				GIT_BRANCH=$2
+				shift
+			fi
+		;;
+
 		-skiphc | --skiphardwarecheck )
 			if [ "$2" != "" ]; then
 				SKIP_HARDWARE_CHECK=$2
@@ -48,6 +55,7 @@ while [ "$1" != "" ]; do
 			echo "      -it, --installationtype           installation type (GROUPS|WORKSPACE|WORKSPACE_ENTERPRISE)"
 			echo "      -u, --update                      use to update existing components (true|false)"
 			echo "      -ls, --localscripts               use 'true' to run local scripts (true|false)"
+			echo "      -gb, --gitbranch                  download scripts from the given git branch (ignored with -ls true)"
 			echo "      -skiphc, --skiphardwarecheck      use to skip hardware check (true|false)"
 			echo "      -?, -h, --help                    this help"
 			echo
@@ -93,6 +101,7 @@ fi
 
 export MYSQL_SERVER_HOST="127.0.0.1"
 DOWNLOAD_URL_PREFIX="https://download.onlyoffice.com/install/install-Debian"
+[ -n "${GIT_BRANCH}" ] && DOWNLOAD_URL_PREFIX="https://raw.githubusercontent.com/ONLYOFFICE/OneClickInstall-Workspace/${GIT_BRANCH}/install-Debian"
 
 if [ "${LOCAL_SCRIPTS}" == "true" ]; then
 	source install-Debian/bootstrap.sh

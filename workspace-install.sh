@@ -16,6 +16,8 @@ set -e
 PARAMETERS="";
 DOCKER="";
 HELP="false";
+LOCAL_SCRIPTS="false";
+GIT_BRANCH="";
 
 while [ "$1" != "" ]; do
         case $1 in
@@ -24,6 +26,14 @@ while [ "$1" != "" ]; do
 	        if [ "$2" == "true" ] || [ "$2" == false ]; then
 			PARAMETERS="$PARAMETERS ${1}";
 			LOCAL_SCRIPTS=$2
+			shift
+		fi
+         ;;
+
+	-gb | --gitbranch )
+	        if [ "$2" != "" ]; then
+			PARAMETERS="$PARAMETERS ${1}";
+			GIT_BRANCH=$2
 			shift
 		fi
          ;;
@@ -104,14 +114,23 @@ if [ "$HELP" == "false" ]; then
 	read_installation_method;
 fi
 
-if [ "$DOCKER" == "true" ]; then
+DOWNLOAD_URL_PREFIX="http://download.onlyoffice.com/install"
+[ -n "${GIT_BRANCH}" ] && DOWNLOAD_URL_PREFIX="https://raw.githubusercontent.com/ONLYOFFICE/OneClickInstall-Workspace/${GIT_BRANCH}"
+
+run_script () {
+	local script_name=$1
+
 	if [ "${LOCAL_SCRIPTS}" == "true" ]; then
-		bash install.sh ${PARAMETERS}
+		bash "${script_name}" ${PARAMETERS}
 	else
-		curl -s -O http://download.onlyoffice.com/install/install.sh
-		bash install.sh ${PARAMETERS}
-		rm install.sh
+		curl -fsS -O "${DOWNLOAD_URL_PREFIX}/${script_name}" || { echo "Failed to download ${script_name}"; exit 1; }
+		bash "${script_name}" ${PARAMETERS}
+		rm "${script_name}"
 	fi
+}
+
+if [ "$DOCKER" == "true" ]; then
+	run_script install.sh
 else
 	if [ -f /etc/redhat-release ] ; then
 		DIST=$(cat /etc/redhat-release |sed s/\ release.*//);
@@ -125,21 +144,9 @@ else
 			exit 1;
 		fi
 
-		if [ "${LOCAL_SCRIPTS}" == "true" ]; then
-			bash install-RedHat.sh ${PARAMETERS}
-		else
-			curl -s -O http://download.onlyoffice.com/install/install-RedHat.sh
-			bash install-RedHat.sh ${PARAMETERS}
-			rm install-RedHat.sh
-		fi
+		run_script install-RedHat.sh
 	elif [ -f /etc/debian_version ] ; then
-		if [ "${LOCAL_SCRIPTS}" == "true" ]; then
-			bash install-Debian.sh ${PARAMETERS}
-		else
-			curl -s -O http://download.onlyoffice.com/install/install-Debian.sh
-			bash install-Debian.sh ${PARAMETERS}
-			rm install-Debian.sh
-		fi
+		run_script install-Debian.sh
 	else
 		echo "Not supported OS";
 		exit 1;
