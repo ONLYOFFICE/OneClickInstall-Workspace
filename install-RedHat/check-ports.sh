@@ -56,6 +56,7 @@ fi
 
 if [ "$CONTROL_PANEL_INSTALLED" = "true" ] || [ "$COMMUNITY_SERVER_INSTALLED" = "true" ] || [ "$XMPP_SERVER_INSTALLED" = "true" ] || [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then
 	if [ "$UPDATE" != "true" ]; then
-		exit;	
+		echo "To update the installed components, run the script with the parameter: --update true"
+		exit 1;
 	fi
 fi
