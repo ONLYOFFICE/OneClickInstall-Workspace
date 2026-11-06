@@ -19,14 +19,17 @@ install-Debian/                   — Debian-specific scripts
   bootstrap.sh                    — System bootstrap
   install-preq.sh                 — Prerequisites (APT)
   install-app.sh                  — App installation
-  check-ports.sh                  — Port availability checks
-  tools.sh                        — Utility functions, hardware checks
+  tools.sh                        — OS detection, hardware check call, hold_package_version
 install-RedHat/                   — RedHat-specific scripts
   bootstrap.sh                    — System bootstrap
   install-preq.sh                 — Prerequisites (YUM)
   install-app.sh                  — App installation
-  check-ports.sh                  — Port availability checks
-  tools.sh                        — Utility functions, hardware checks
+  tools.sh                        — Hardware check call, interactive confirmation helper
+common/                           — Scripts shared by the DEB and RPM installers
+  check-ports.sh                  — Installed-component detection and port checks (ss)
+  swap.sh                         — Swap file creation (fallocate, dd fallback)
+  hardware.sh                     — Hardware requirements check
+  validate.sh                     — Argument validation for the DEB and RPM wrappers
 tests/vagrant/                    — Vagrant multi-OS test infrastructure
 ```
 
@@ -49,6 +52,7 @@ sudo bash workspace-install.sh
 --installdocs         true|false|pull   (Document Server)
 --installmailserver   true|false|pull   (Mail Server)
 --makeswap            true|false        (default: true)
+--noninteractive      true|false        (Docker only; never ask questions, Mail Server needs --maildomain, default: false)
 --localscripts        true|false        (use scripts from the current dir instead of downloading)
 --gitbranch           <BRANCH>          (download scripts from this branch of OneClickInstall-Workspace)
 ```

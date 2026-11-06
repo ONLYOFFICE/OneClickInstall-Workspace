@@ -9,17 +9,17 @@ cat<<EOF
 #######################################
 
 EOF
-apt-get -y update
+apt-get -o DPkg::Lock::Timeout=60 -y update
 
 if [ "$UPDATE" = "true" ] && [ "$CONTROL_PANEL_INSTALLED" = "true" ]; then
-	apt-get install -y --only-upgrade ${package_sysname}-controlpanel
+	apt-get -o DPkg::Lock::Timeout=60 install -y --only-upgrade ${package_sysname}-controlpanel
 fi
 
 if [ "$UPDATE" = "true" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then	
 	ds_pkg_installed_name=$(dpkg -l | grep ${package_sysname}-documentserver | tail -n1 | awk '{print $2}');
 
 	if [ "$INSTALLATION_TYPE" = "GROUPS" ]; then
-		apt-get remove -yq ${ds_pkg_installed_name};
+		apt-get -o DPkg::Lock::Timeout=60 remove -yq ${ds_pkg_installed_name};
 
 		DOCUMENT_SERVER_INSTALLED="false";
 		
@@ -40,13 +40,13 @@ if [ "$UPDATE" = "true" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then
 			
 			debconf-get-selections | grep ^${ds_pkg_installed_name} | sed s/${ds_pkg_installed_name}/${ds_pkg_name}/g | debconf-set-selections
 						
-			apt-get remove -yq ${ds_pkg_installed_name}
+			apt-get -o DPkg::Lock::Timeout=60 remove -yq ${ds_pkg_installed_name}
 			
-			apt-get install -yq ${ds_pkg_name}
+			apt-get -o DPkg::Lock::Timeout=60 install -yq ${ds_pkg_name}
 			
 			DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver	
 		else
-			apt-get install -y --only-upgrade ${ds_pkg_name};	
+			apt-get -o DPkg::Lock::Timeout=60 install -y --only-upgrade ${ds_pkg_name};	
 		fi				
 	fi
 fi
@@ -83,7 +83,7 @@ if [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 	CURRENT_VERSION=$(dpkg-query -W -f='${Version}' "${package_sysname}-communityserver")
 	AVAILABLE_VERSION=$(apt-cache show "${package_sysname}-communityserver" | awk '/Version:/{print $2}' | sort -V | tail -n 1)
 
-	apt-get install -o DPkg::options::="--force-confnew" -y --only-upgrade ${package_sysname}-communityserver elasticsearch=7.16.3
+	apt-get -o DPkg::Lock::Timeout=60 install -o DPkg::options::="--force-confnew" -y --only-upgrade ${package_sysname}-communityserver elasticsearch=7.16.3
 	
 	if [[ "$CURRENT_VERSION" = "$AVAILABLE_VERSION" ]] && [[ "$CURRENT_MYSQL_VERSION" != "$AVAILABLE_MYSQL_VERSION" ]]; then
 		DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver
@@ -91,7 +91,7 @@ if [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 fi
 
 if [ "$UPDATE" = "true" ] && [ "$XMPP_SERVER_INSTALLED" = "true" ]; then
-	apt-get install -y --only-upgrade ${package_sysname}-xmppserver
+	apt-get -o DPkg::Lock::Timeout=60 install -y --only-upgrade ${package_sysname}-xmppserver
 fi
 
 if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "false" ]; then
@@ -125,7 +125,7 @@ if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "fal
 		ds_pkg_name+="-ee"
 	fi
 	
-	apt-get install -yq "$ds_pkg_name"
+	apt-get -o DPkg::Lock::Timeout=60 install -yq "$ds_pkg_name"
 fi
 
 if [ "$CONTROL_PANEL_INSTALLED" = "false" ]; then
@@ -134,7 +134,7 @@ if [ "$CONTROL_PANEL_INSTALLED" = "false" ]; then
 	# setup default port
 	echo ${package_sysname}-controlpanel ${package_sysname}-controlpanel/port select $CP_PORT | sudo debconf-set-selections
 
-	apt-get install -yq ${package_sysname}-controlpanel
+	apt-get -o DPkg::Lock::Timeout=60 install -yq ${package_sysname}-controlpanel
 fi
 
 if [ "$COMMUNITY_SERVER_INSTALLED" = "false" ]; then
@@ -146,7 +146,7 @@ if [ "$COMMUNITY_SERVER_INSTALLED" = "false" ]; then
 	echo ${package_sysname} ${package_sysname}-communityserver/db-pwd select ${MYSQL_SERVER_PASS} | sudo debconf-set-selections
 	echo ${package_sysname} ${package_sysname}-communityserver/db-name select ${MYSQL_SERVER_DB_NAME} | sudo debconf-set-selections
 
-	apt-get install -yq ${package_sysname}-communityserver
+	apt-get -o DPkg::Lock::Timeout=60 install -yq ${package_sysname}-communityserver
 fi
 
 if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$XMPP_SERVER_INSTALLED" = "false" ]; then
@@ -155,7 +155,7 @@ if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$XMPP_SERVER_INSTALLED" = "false" 
 	echo ${package_sysname} ${package_sysname}-xmppserver/db-pwd select ${MYSQL_SERVER_PASS} | sudo debconf-set-selections
 	echo ${package_sysname} ${package_sysname}-xmppserver/db-name select ${MYSQL_SERVER_DB_NAME} | sudo debconf-set-selections
 
-	apt-get install -yq ${package_sysname}-xmppserver
+	apt-get -o DPkg::Lock::Timeout=60 install -yq ${package_sysname}-xmppserver
 	
 	DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver
 
@@ -183,7 +183,7 @@ else
 	systemctl restart nginx
 fi
 
-make_swap
+[ "${MAKESWAP}" != "true" ] || make_swap_on_low_memory /app_swapfile
 
 echo ""
 echo "$RES_INSTALL_SUCCESS"

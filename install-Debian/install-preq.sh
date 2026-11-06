@@ -25,7 +25,7 @@ if [ "$DIST" = "debian" ]; then
 	echo -e "Package: *\nPin: origin \"packages.microsoft.com\"\nPin-Priority: 1002" | tee /etc/apt/preferences.d/99microsoft-prod.pref
 	DEBIAN_FRONTEND=noninteractive dpkg --force-confnew -i packages-microsoft-prod.deb && rm packages-microsoft-prod.deb
 elif dpkg -l | grep -q packages-microsoft-prod; then
-    apt-get purge -y packages-microsoft-prod
+    apt-get -o DPkg::Lock::Timeout=60 purge -y packages-microsoft-prod
 fi
 
 # add elasticsearch repo
@@ -83,16 +83,16 @@ fi
 
 # add certbot
 if [ "$DIST" = "ubuntu" ]; then
-	command_exists snap || apt-get -y install snapd
+	command_exists snap || apt-get -o DPkg::Lock::Timeout=60 -y install snapd
 	snap install --classic certbot
 else
-	apt-get install -yq certbot
+	apt-get -o DPkg::Lock::Timeout=60 install -yq certbot
 fi
 
-if apt-get install --dry-run ruby-god 2>/dev/null; then
-	apt-get install -yq ruby-god ruby-dev
+if apt-get -o DPkg::Lock::Timeout=60 install --dry-run ruby-god 2>/dev/null; then
+	apt-get -o DPkg::Lock::Timeout=60 install -yq ruby-god ruby-dev
 else
-	command_exists ruby || apt-get install -yq build-essential libssl-dev libreadline-dev zlib1g-dev ruby-full
+	command_exists ruby || apt-get -o DPkg::Lock::Timeout=60 install -yq build-essential libssl-dev libreadline-dev zlib1g-dev ruby-full
 	command_exists god || gem install --bindir /usr/bin "$(ruby -e 'puts RUBY_VERSION > "3" ? "resurrected_god" : "god"')" --no-document
 fi
 
@@ -111,13 +111,13 @@ echo "deb [signed-by=/usr/share/keyrings/mono-extra.gpg] https://d2nlctn12v279m.
 curl -fsSL https://d2nlctn12v279m.cloudfront.net/repo/mono/mono.key | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/mono-extra.gpg --import
 chmod 644 /usr/share/keyrings/mono-extra.gpg
 
-apt-get update -y
+apt-get -o DPkg::Lock::Timeout=60 update -y
 MONO_COMPLETE_VERSION=$(apt-cache madison mono-complete | grep "| 6.8.0.123" | sed -n '1p' | cut -d'|' -f2 | tr -d ' ')
 CURRENT_MYSQL_VERSION=$(dpkg-query -W -f='${Version}' "mysql-client" || true) 
 AVAILABLE_MYSQL_VERSION=$(apt-cache policy "mysql-client" | awk 'NR==3{print $2}')
 
 # install
-apt-get install -o DPkg::options::="--force-confnew" -yq wget \
+apt-get -o DPkg::Lock::Timeout=60 install -o DPkg::options::="--force-confnew" -yq wget \
 				cron \
 				mono-complete=${MONO_COMPLETE_VERSION} \
 				ca-certificates-mono \
@@ -136,14 +136,14 @@ apt-get install -o DPkg::options::="--force-confnew" -yq wget \
 				dotnet-sdk-8.0
 
 if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
-	apt-get install -yq rabbitmq-server postgresql
+	apt-get -o DPkg::Lock::Timeout=60 install -yq rabbitmq-server postgresql
 fi
 
 # Remove default-authentication-plugin from MySQL config — option removed in MySQL 8.4, causes startup failure
 find /etc/mysql -name "*.cnf" -exec sed -i '/^default-authentication-plugin/d' {} \; 2>/dev/null || true
 
 if apt-cache search --names-only '^ffmpeg$' | grep -q "ffmpeg"; then
-	apt-get install -yq ffmpeg
+	apt-get -o DPkg::Lock::Timeout=60 install -yq ffmpeg
 fi
 		
 if [ -e /etc/redis/redis.conf ]; then
@@ -154,7 +154,7 @@ if [ -e /etc/redis/redis.conf ]; then
 fi
 	
 if ! dpkg -l | grep -q "elasticsearch"; then
-	apt-get install -yq elasticsearch=7.16.3
+	apt-get -o DPkg::Lock::Timeout=60 install -yq elasticsearch=7.16.3
 fi
 
 hold_package_version

@@ -285,7 +285,7 @@ NGINX_WORKER_CONNECTIONS=${NGINX_WORKER_CONNECTIONS:-$(ulimit -n)};
 sed 's/^worker_processes.*/'"worker_processes ${NGINX_WORKER_PROCESSES};"'/' -i ${NGINX_ROOT_DIR}/nginx.conf
 sed 's/worker_connections.*/'"worker_connections ${NGINX_WORKER_CONNECTIONS};"'/' -i ${NGINX_ROOT_DIR}/nginx.conf
 
-make_swap
+[ "${MAKESWAP}" != "true" ] || make_swap_on_low_memory /app_swapfile
 
 if rpm -q "firewalld"; then
 	firewall-cmd --permanent --zone=public --add-service=http

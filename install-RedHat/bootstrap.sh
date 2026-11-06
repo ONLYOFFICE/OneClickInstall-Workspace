@@ -10,6 +10,6 @@ cat<<EOF
 
 EOF
 
-if ! rpm -q net-tools; then
-	${package_manager} -y install net-tools;
+if ! rpm -q iproute; then
+	${package_manager} -y install iproute
 fi

@@ -98,6 +98,7 @@ JWT_SECRET="";
 CORE_MACHINEKEY="";
 
 SKIP_HARDWARE_CHECK="false";
+NON_INTERACTIVE="false";
 SKIP_VERSION_CHECK="false";
 SKIP_DOMAIN_CHECK="false";
 
@@ -365,6 +366,13 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
+		-noni | --noninteractive )
+			if [ "$2" != "" ]; then
+				NON_INTERACTIVE=$2
+				shift
+			fi
+		;;
+
 		-skipvc | --skipversioncheck )
 			if [ "$2" != "" ]; then
 				SKIP_VERSION_CHECK=$2
@@ -518,6 +526,7 @@ while [ "$1" != "" ]; do
 			echo "--partnerdatafile         <FILE>                 Partner data file"
 			echo "--makeswap                <true|false>           Create swap file"
 			echo "--skiphardwarecheck       <true|false>           Skip hardware check"
+			echo "--noninteractive          <true|false>           Never ask questions: fail the hardware check, skip Mail Server without --maildomain (default: false)"
 			echo "--skipversioncheck        <true|false>           Skip version check during update"
 			echo "--skipdomaincheck         <true|false>           Skip mail domain check"
 			echo "--localscripts            <true|false>           Use scripts from the current directory instead of downloading them"
@@ -601,7 +610,40 @@ while [ "$1" != "" ]; do
 	shift
 done
 
+case "${INSTALLATION_TYPE}" in
+	GROUPS | WORKSPACE | WORKSPACE_ENTERPRISE ) ;;
+	* ) echo "Error: Invalid --installationtype '${INSTALLATION_TYPE}'. Valid values: GROUPS, WORKSPACE, WORKSPACE_ENTERPRISE." >&2; exit 1 ;;
+esac
 
+validate_bool () {
+	[ -z "$2" ] && return 0
+	case "$2" in
+		true | false ) ;;
+		* ) echo "Error: Invalid ${1} '${2}'. Valid values: true, false." >&2; exit 1 ;;
+	esac
+}
+
+validate_bool_or_pull () {
+	[ -z "$2" ] && return 0
+	case "$2" in
+		true | false | pull ) ;;
+		* ) echo "Error: Invalid ${1} '${2}'. Valid values: true, false, pull." >&2; exit 1 ;;
+	esac
+}
+
+validate_bool --update "$UPDATE"
+validate_bool --makeswap "$MAKESWAP"
+validate_bool --noninteractive "$NON_INTERACTIVE"
+validate_bool --skiphardwarecheck "$SKIP_HARDWARE_CHECK"
+validate_bool --skipversioncheck "$SKIP_VERSION_CHECK"
+validate_bool --skipdomaincheck "$SKIP_DOMAIN_CHECK"
+validate_bool --useasexternalserver "$USE_AS_EXTERNAL_SERVER"
+
+validate_bool_or_pull --installcs "$INSTALL_COMMUNITY_SERVER"
+validate_bool_or_pull --installdocs "$INSTALL_DOCUMENT_SERVER"
+validate_bool_or_pull --installmailserver "$INSTALL_MAIL_SERVER"
+validate_bool_or_pull --installelasticsearch "$INSTALL_ELASTICSEARCH"
+validate_bool_or_pull --installcontrolpanel "$INSTALL_CONTROLPANEL"
 
 root_checking () {
 	if [ ! $( id -u ) -eq 0 ]; then
@@ -656,16 +698,16 @@ install_jq () {
 	fi
 }
 
-install_netstat () {
+install_iproute () {
 	if command_exists apt-get; then
 		apt-get -y update
-		apt-get -y -q install net-tools
+		apt-get -y -q install iproute2
 	elif command_exists yum; then
-		yum -y install net-tools
+		yum -y install iproute
 	fi
 
-	if ! command_exists netstat; then
-		echo "command netstat not found"
+	if ! command_exists ss; then
+		echo "command ss not found"
 		exit 1;
 	fi
 }
@@ -771,51 +813,92 @@ check_kernel () {
 }
 
 check_hardware () {
-	AVAILABLE_DISK_SPACE=$(df -m /  | tail -1 | awk '{ print $4 }');
-	TOTAL_MEMORY=$(free --mega | grep -oP '\d+' | head -n 1);
-	CPU_CORES_NUMBER=$(cat /proc/cpuinfo | grep processor | wc -l);
+	AVAILABLE_DISK_SPACE=$(df -Pm / | awk 'NR == 2 { print $4 }')
+	TOTAL_MEMORY=$(free --mega | awk '/^Mem:/ { print $2 }')
+	CPU_CORES_NUMBER=$(nproc --all)
 
-	REQUIREMENTS_NOT_MET="";
+	local requirements_not_met=""
 
-	if [ ${AVAILABLE_DISK_SPACE} -lt ${DISK_REQUIREMENTS} ]; then
-		REQUIREMENTS_NOT_MET="${REQUIREMENTS_NOT_MET}\n  - at least $DISK_REQUIREMENTS MB of free HDD space (available: ${AVAILABLE_DISK_SPACE} MB)";
+	if (( AVAILABLE_DISK_SPACE < DISK_REQUIREMENTS )); then
+		requirements_not_met="${requirements_not_met}\n  - at least ${DISK_REQUIREMENTS} MB of free disk space (available: ${AVAILABLE_DISK_SPACE} MB)"
 	fi
 
-	if [ ${TOTAL_MEMORY} -lt ${MEMORY_REQUIREMENTS} ]; then
-		REQUIREMENTS_NOT_MET="${REQUIREMENTS_NOT_MET}\n  - at least $MEMORY_REQUIREMENTS MB of RAM (available: ${TOTAL_MEMORY} MB)";
+	if (( TOTAL_MEMORY < MEMORY_REQUIREMENTS )); then
+		requirements_not_met="${requirements_not_met}\n  - at least ${MEMORY_REQUIREMENTS} MB of RAM (available: ${TOTAL_MEMORY} MB)"
 	fi
 
-	if [ ${CPU_CORES_NUMBER} -lt ${CORE_REQUIREMENTS} ]; then
-		REQUIREMENTS_NOT_MET="${REQUIREMENTS_NOT_MET}\n  - a CPU with at least $CORE_REQUIREMENTS cores (available: ${CPU_CORES_NUMBER})";
+	if (( CPU_CORES_NUMBER < CORE_REQUIREMENTS )); then
+		requirements_not_met="${requirements_not_met}\n  - a CPU with at least ${CORE_REQUIREMENTS} cores (available: ${CPU_CORES_NUMBER})"
 	fi
 
-	if [ -n "${REQUIREMENTS_NOT_MET}" ]; then
-		printf "Minimal requirements are not met, your system needs:%b\n\nTo skip this check, use the --skiphardwarecheck true parameter\n" "${REQUIREMENTS_NOT_MET}";
-		exit 1;
+	if [ -n "${requirements_not_met}" ]; then
+		printf "Minimal requirements are not met, your system needs:%b\n\n" "${requirements_not_met}"
+
+		# Without a terminal or in non-interactive mode there is nobody to ask
+		if [ "${NON_INTERACTIVE}" = "true" ] || [ ! -t 0 ]; then
+			echo "To skip this check, use the --skiphardwarecheck true parameter"
+			exit 1
+		fi
+
+		read -r -p "Continue installation anyway? (y/N): " CONTINUE_CHOICE
+		[[ "${CONTINUE_CHOICE,,}" =~ ^(y|yes)$ ]] || exit 1
 	fi
 }
 
+# Creates a swap file on hosts with less than 16 GB of RAM; any failure only produces a warning, swap is optional
 make_swap () {
-	DISK_REQUIREMENTS=6144; #6Gb free space
-	MEMORY_REQUIREMENTS=16000; #RAM ~16Gb
+	local SWAP_DISK_REQUIREMENTS=6144 #6Gb free space
+	local SWAP_MEMORY_REQUIREMENTS=16000 #RAM ~16Gb
+	local AVAILABLE_SPACE TOTAL_RAM EXIST
 
-	AVAILABLE_DISK_SPACE=$(df -m /  | tail -1 | awk '{ print $4 }');
-	TOTAL_MEMORY=$(free --mega | grep -oP '\d+' | head -n 1);
-	EXIST=$(swapon -s | awk '{ print $1 }' | { grep -x ${SWAPFILE} || true; });
+	AVAILABLE_SPACE=$(df -Pm / | awk 'NR == 2 { print $4 }')
+	TOTAL_RAM=$(free --mega | awk '/^Mem:/ { print $2 }')
+	EXIST=$(swapon -s | awk '{ print $1 }' | { grep -x "${SWAPFILE}" || true; })
 
-	if [[ -z $EXIST ]] && [ ${TOTAL_MEMORY} -lt ${MEMORY_REQUIREMENTS} ] && [ ${AVAILABLE_DISK_SPACE} -gt ${DISK_REQUIREMENTS} ]; then
-
-		if [ "${DIST}" == "Ubuntu" ] || [ "${DIST}" == "Debian" ]; then
-			fallocate -l 6G ${SWAPFILE}
-		else
-			dd if=/dev/zero of=${SWAPFILE} count=6144 bs=1MiB
-		fi
-
-		chmod 600 ${SWAPFILE}
-		mkswap ${SWAPFILE}
-		swapon ${SWAPFILE}
-		echo "$SWAPFILE none swap sw 0 0" >> /etc/fstab
+	if [ -n "${EXIST}" ] || (( TOTAL_RAM >= SWAP_MEMORY_REQUIREMENTS )); then
+		return 0
 	fi
+
+	if (( AVAILABLE_SPACE <= SWAP_DISK_REQUIREMENTS )); then
+		echo "Warning: swap file was not created, less than ${SWAP_DISK_REQUIREMENTS} MB of free disk space on /"
+		return 0
+	fi
+
+	# fallocate may produce a file with holes that swapon rejects, so fall back to dd; status 2 means swapon is not permitted here
+	local STATUS=0
+	enable_swap_file fallocate || STATUS=$?
+	if [ "${STATUS}" -eq 1 ]; then
+		STATUS=0
+		enable_swap_file dd || STATUS=$?
+	fi
+	if [ "${STATUS}" -eq 0 ]; then
+		awk -v swapfile="${SWAPFILE}" '$1 == swapfile && $3 == "swap" { found = 1 } END { exit !found }' /etc/fstab || echo "${SWAPFILE} none swap sw 0 0" >> /etc/fstab
+		echo "Swap file ${SWAPFILE} (6 GB) was created and enabled"
+	else
+		rm -f "${SWAPFILE}"
+		echo "Warning: swap file was not created, continuing without it"
+	fi
+	return 0
+}
+
+enable_swap_file () {
+	local METHOD="$1"
+
+	rm -f "${SWAPFILE}" && touch "${SWAPFILE}" || return 1
+	[ "$(df -T / | awk 'NR==2{print $2}')" != "btrfs" ] || chattr +C "${SWAPFILE}" || return 1
+
+	if [ "${METHOD}" = "fallocate" ]; then
+		fallocate -l 6G "${SWAPFILE}"
+	else
+		dd if=/dev/zero of="${SWAPFILE}" bs=1MiB count=6144 status=none
+	fi || return 1
+
+	chmod 600 "${SWAPFILE}" && mkswap "${SWAPFILE}" >/dev/null || return 1
+
+	local SWAPON_ERROR
+	SWAPON_ERROR=$(swapon "${SWAPFILE}" 2>&1) && return 0
+	[[ "${SWAPON_ERROR}" == *"not permitted"* ]] && return 2
+	return 1
 }
 
 check_ports () {
@@ -823,8 +906,8 @@ check_ports () {
 	ARRAY_PORTS=();
 	USED_PORTS="";
 
-	if ! command_exists netstat; then
-		install_netstat
+	if ! command_exists ss; then
+		install_iproute
 	fi
 
 	if [ "${COMMUNITY_PORT//[0-9]}" = "" ]; then
@@ -849,7 +932,7 @@ check_ports () {
 	fi
 
 	if [ "$INSTALL_MAIL_SERVER" == "true" ]; then
-		ARRAY_PORTS=(${ARRAY_PORTS[@]} "25" "143" "587", "465", "993", "995", "4190");
+		ARRAY_PORTS=(${ARRAY_PORTS[@]} "25" "143" "587" "465" "993" "995" "4190");
 
 		if [ "${USE_AS_EXTERNAL_SERVER}" == "true" ]; then
 			ARRAY_PORTS=(${ARRAY_PORTS[@]} "8081");
@@ -863,7 +946,7 @@ check_ports () {
 	for PORT in "${ARRAY_PORTS[@]}"
 	do
 		REGEXP=":$PORT$"
-		CHECK_RESULT=$(netstat -lnt | awk '{print $4}' | { grep $REGEXP || true; })
+		CHECK_RESULT=$(ss -H -lnt | awk '{print $4}' | { grep "$REGEXP" || true; })
 
 		if [[ $CHECK_RESULT != "" ]]; then
 			if [[ $USED_PORTS != "" ]]; then
@@ -2323,7 +2406,12 @@ start_installation () {
 		if [ "$INSTALL_MAIL_SERVER" == "true" ]; then
 			if [[ -z ${MAIL_DOMAIN_NAME} ]]; then
 
+				# Nobody to ask in non-interactive mode, so Mail Server is skipped without a domain
 				INSTALL_MAIL_SERVER_TEMP="";
+				if [ "$NON_INTERACTIVE" == "true" ]; then
+					INSTALL_MAIL_SERVER_TEMP="N";
+					echo "Mail Server is skipped: --maildomain is required in non-interactive mode"
+				fi
 
 				while [ "$INSTALL_MAIL_SERVER_TEMP" != "Y" ] && [ "$INSTALL_MAIL_SERVER_TEMP" != "N" ]; do
 					read -p "Install ONLYOFFICE Mail Server [Y/N]?: " INSTALL_MAIL_SERVER_TEMP
