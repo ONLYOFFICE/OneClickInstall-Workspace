@@ -82,6 +82,7 @@ sudo bash workspace-install.sh --help
 | `--update`            | `true` \| `false`                             | `false`                  | Update       |
 | `--skiphardwarecheck` | `true` \| `false`                             | `false`                  | Skip checks  |
 | `--makeswap`          | `true` \| `false`                             | `true`                   | Create swap file when RAM is below 16 GB |
+| `--logging`           | `true` \| `false`                             | `true`                   | Keep a log if installation fails |
 
 ### Docker flags
 > Applies only to Docker installation

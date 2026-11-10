@@ -531,6 +531,8 @@ while [ "$1" != "" ]; do
 			echo "--skipdomaincheck         <true|false>           Skip mail domain check"
 			echo "--localscripts            <true|false>           Use scripts from the current directory instead of downloading them"
 			echo "--gitbranch               <BRANCH>               Download scripts from the given git branch (ignored with --localscripts true)"
+			# Only the entry scripts parse --logging, so install.sh run directly does not offer it
+			[ "${HELP_TARGET}" != "install.sh" ] && echo "--logging                 <true|false>           Keep a compacted log if the installation fails (default: true)"
 			echo
 			echo "EXAMPLES:"
 			echo "    Install all components with default settings:"
@@ -2266,7 +2268,7 @@ create_network () {
 	EXIST=$(docker network ls | awk '{print $2;}' | { grep -x ${NETWORK} || true; });
 
 	if [[ -z ${EXIST} ]]; then
-		docker network create --driver bridge ${NETWORK}
+		docker network create --driver bridge ${NETWORK} >/dev/null
 	fi
 }
 

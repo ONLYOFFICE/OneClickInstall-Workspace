@@ -16,6 +16,7 @@ DOCKER="";
 HELP="false";
 LOCAL_SCRIPTS="false";
 GIT_BRANCH="";
+ENABLE_LOGGING="true";
 
 while [ "$1" != "" ]; do
 
@@ -23,6 +24,14 @@ while [ "$1" != "" ]; do
 		HELP="true";
 		DOCKER="true";
 		PARAMETERS="$PARAMETERS -ht workspace-enterprise-install.sh";
+	fi
+
+	if [ "$1" == "-log" ] || [ "$1" == "--logging" ]; then
+		if [ "$2" == "true" ] || [ "$2" == "false" ]; then
+			ENABLE_LOGGING=$2;
+			shift 2;
+			continue;
+		fi
 	fi
 
 	if [ "$1" == "-ls" ] || [ "$1" == "--localscripts" ]; then
@@ -110,16 +119,37 @@ fi
 DOWNLOAD_URL_PREFIX="http://download.onlyoffice.com/install"
 [ -n "${GIT_BRANCH}" ] && DOWNLOAD_URL_PREFIX="https://raw.githubusercontent.com/ONLYOFFICE/OneClickInstall-Workspace/${GIT_BRANCH}"
 
+# The log is optional: when the logging helpers cannot be loaded, the installation runs without it
+if [ "${ENABLE_LOGGING}" == "true" ]; then
+	LOGGING_SCRIPT="common/logging.sh"
+	if [ "${LOCAL_SCRIPTS}" == "true" ]; then
+		source "${LOGGING_SCRIPT}" || ENABLE_LOGGING="false"
+	else
+		LOGGING_SCRIPT_BODY=$(curl -fsS "${DOWNLOAD_URL_PREFIX}/${LOGGING_SCRIPT}") || LOGGING_SCRIPT_BODY=""
+		if [ -n "${LOGGING_SCRIPT_BODY}" ] && bash -n <<< "${LOGGING_SCRIPT_BODY}"; then
+			source <(printf '%s\n' "${LOGGING_SCRIPT_BODY}")
+		else
+			echo "Warning: failed to load ${LOGGING_SCRIPT}, the installation runs without a log" >&2
+			ENABLE_LOGGING="false"
+		fi
+	fi
+fi
+
+# Runs the installer and exits with its code
 run_script () {
 	local script_name=$1
 
-	if [ "${LOCAL_SCRIPTS}" == "true" ]; then
-		bash "${script_name}" ${PARAMETERS}
-	else
+	if [ "${LOCAL_SCRIPTS}" != "true" ]; then
 		curl -fsS -O "${DOWNLOAD_URL_PREFIX}/${script_name}" || { echo "Failed to download ${script_name}"; exit 1; }
-		bash "${script_name}" ${PARAMETERS}
-		rm "${script_name}"
 	fi
+	if [ "${ENABLE_LOGGING}" == "true" ]; then
+		run_with_log "${script_name}" ${PARAMETERS}
+	else
+		bash "${script_name}" ${PARAMETERS} && EXIT_CODE=0 || EXIT_CODE=$?
+	fi
+	[ "${LOCAL_SCRIPTS}" == "true" ] || rm -f "${script_name}"
+	[ "${ENABLE_LOGGING}" != "true" ] || finish_log
+	exit ${EXIT_CODE}
 }
 
 if [ "$DOCKER" == "true" ]; then

@@ -30,6 +30,7 @@ common/                           — Scripts shared by the DEB and RPM installe
   swap.sh                         — Swap file creation (fallocate, dd fallback)
   hardware.sh                     — Hardware requirements check
   validate.sh                     — Argument validation for the DEB and RPM wrappers
+  logging.sh                      — Wrapper log: masked command line, host summary, compacted output kept after a failed run
 tests/vagrant/                    — Vagrant multi-OS test infrastructure
 ```
 
@@ -54,6 +55,7 @@ sudo bash workspace-install.sh
 --makeswap            true|false        (default: true)
 --noninteractive      true|false        (Docker only; never ask questions, Mail Server needs --maildomain, default: false)
 --localscripts        true|false        (use scripts from the current dir instead of downloading)
+--logging             true|false        (default: true; keep a compacted OneClick*.log after a failed run, consumed by the entry scripts)
 --gitbranch           <BRANCH>          (download scripts from this branch of OneClickInstall-Workspace)
 ```
 
