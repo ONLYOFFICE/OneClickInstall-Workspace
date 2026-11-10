@@ -47,6 +47,11 @@ if [ "$UPDATE" = "true" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then
 			DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver	
 		else
 			apt-get -o DPkg::Lock::Timeout=60 install -y --only-upgrade ${ds_pkg_name};	
+
+			# Re-apply the documentserver-ee settings (license path, trial) that communityserver skipped when configured earlier
+			if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ] && grep -Eq 'key="license\.file\.path"[[:space:]]+value[[:space:]]*=[[:space:]]*""' /var/www/${package_sysname}/WebStudio/web.appsettings.config; then
+				DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver
+			fi
 		fi				
 	fi
 fi
