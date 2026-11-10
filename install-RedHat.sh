@@ -86,7 +86,7 @@ while [ "$1" != "" ]; do
 			fi
 		;;
 
-		-? | -h | --help )
+		'-?' | -h | --help )
 			echo "  Usage $0 [PARAMETER] [[PARAMETER], ...]"
 			echo "    Parameters:"
 			echo "      -it, --installationtype           installation type (GROUPS|WORKSPACE|WORKSPACE_ENTERPRISE)"
