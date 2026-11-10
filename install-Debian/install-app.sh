@@ -37,8 +37,30 @@ if [ "$UPDATE" = "true" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then
 
 	if [ -n "$ds_pkg_name" ]; then
 		if ! dpkg -l ${ds_pkg_name} &> /dev/null; then
+			# The documentserver-ee postinst only connects to PostgreSQL, so the role and the database must exist before it
+			if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
+				# Keep the database settings the installed documentserver already has and fall back to the defaults only without them
+				ds_debconf_answer () { echo "GET $DS_COMMON_NAME/$1" | debconf-communicate 2>/dev/null | awk '$1 == 0 { sub(/^0 ?/, ""); print }'; }
+				DS_DB_NAME=${DS_DB_NAME:-$(ds_debconf_answer db-name)}
+				DS_DB_NAME=${DS_DB_NAME:-$DS_COMMON_NAME}
+				DS_DB_USER=${DS_DB_USER:-$(ds_debconf_answer db-user)}
+				DS_DB_USER=${DS_DB_USER:-$DS_COMMON_NAME}
+				DS_DB_PWD=${DS_DB_PWD:-$(ds_debconf_answer db-pwd)}
+				DS_DB_PWD=${DS_DB_PWD:-$DS_COMMON_NAME}
+
+				su - postgres -s /bin/bash -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='${DS_DB_USER}'\"" | grep -q 1 || \
+					su - postgres -s /bin/bash -c "psql -c \"CREATE USER ${DS_DB_USER} WITH password '${DS_DB_PWD}';\""
+				su - postgres -s /bin/bash -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='${DS_DB_NAME}'\"" | grep -q 1 || \
+					su - postgres -s /bin/bash -c "psql -c \"CREATE DATABASE ${DS_DB_NAME} OWNER ${DS_DB_USER};\""
+			fi
 			
 			debconf-get-selections | grep ^${ds_pkg_installed_name} | sed s/${ds_pkg_installed_name}/${ds_pkg_name}/g | debconf-set-selections
+
+			if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
+				echo ${ds_pkg_name} $DS_COMMON_NAME/db-pwd select $DS_DB_PWD | debconf-set-selections
+				echo ${ds_pkg_name} $DS_COMMON_NAME/db-user select $DS_DB_USER | debconf-set-selections
+				echo ${ds_pkg_name} $DS_COMMON_NAME/db-name select $DS_DB_NAME | debconf-set-selections
+			fi
 						
 			apt-get -o DPkg::Lock::Timeout=60 remove -yq ${ds_pkg_installed_name}
 			
