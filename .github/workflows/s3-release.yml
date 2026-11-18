@@ -35,10 +35,11 @@ jobs:
                 --exclude "*" \
                 --include="install-RedHat/*" \
                 --include="install-Debian/*" \
+                --include="common/*" \
                 --include="install.sh" \
                 --include="install-Debian.sh" \
                 --include="install-RedHat.sh" \
-                --include="group-install.sh" \
+                --include="groups-install.sh" \
                 --include="workspace-install.sh" \
                 --include="workspace-enterprise-install.sh"
       

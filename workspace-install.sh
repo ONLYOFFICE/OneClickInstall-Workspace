@@ -16,14 +16,33 @@ set -e
 PARAMETERS="";
 DOCKER="";
 HELP="false";
+LOCAL_SCRIPTS="false";
+GIT_BRANCH="";
+ENABLE_LOGGING="true";
 
 while [ "$1" != "" ]; do
         case $1 in
+
+	-log | --logging )
+		if [ "$2" == "true" ] || [ "$2" == "false" ]; then
+			ENABLE_LOGGING=$2
+			shift 2
+			continue
+		fi
+	;;
 
 	-ls | --localscripts )
 	        if [ "$2" == "true" ] || [ "$2" == false ]; then
 			PARAMETERS="$PARAMETERS ${1}";
 			LOCAL_SCRIPTS=$2
+			shift
+		fi
+         ;;
+
+	-gb | --gitbranch )
+	        if [ "$2" != "" ]; then
+			PARAMETERS="$PARAMETERS ${1}";
+			GIT_BRANCH=$2
 			shift
 		fi
          ;;
@@ -104,14 +123,44 @@ if [ "$HELP" == "false" ]; then
 	read_installation_method;
 fi
 
-if [ "$DOCKER" == "true" ]; then
+DOWNLOAD_URL_PREFIX="http://download.onlyoffice.com/install"
+[ -n "${GIT_BRANCH}" ] && DOWNLOAD_URL_PREFIX="https://raw.githubusercontent.com/ONLYOFFICE/OneClickInstall-Workspace/${GIT_BRANCH}"
+
+# The log is optional: when the logging helpers cannot be loaded, the installation runs without it
+if [ "${ENABLE_LOGGING}" == "true" ]; then
+	LOGGING_SCRIPT="common/logging.sh"
 	if [ "${LOCAL_SCRIPTS}" == "true" ]; then
-		bash install.sh ${PARAMETERS}
+		source "${LOGGING_SCRIPT}" || ENABLE_LOGGING="false"
 	else
-		curl -s -O http://download.onlyoffice.com/install/install.sh
-		bash install.sh ${PARAMETERS}
-		rm install.sh
+		LOGGING_SCRIPT_BODY=$(curl -fsS "${DOWNLOAD_URL_PREFIX}/${LOGGING_SCRIPT}") || LOGGING_SCRIPT_BODY=""
+		if [ -n "${LOGGING_SCRIPT_BODY}" ] && bash -n <<< "${LOGGING_SCRIPT_BODY}"; then
+			source <(printf '%s\n' "${LOGGING_SCRIPT_BODY}")
+		else
+			echo "Warning: failed to load ${LOGGING_SCRIPT}, the installation runs without a log" >&2
+			ENABLE_LOGGING="false"
+		fi
 	fi
+fi
+
+# Runs the installer and exits with its code
+run_script () {
+	local script_name=$1
+
+	if [ "${LOCAL_SCRIPTS}" != "true" ]; then
+		curl -fsS -O "${DOWNLOAD_URL_PREFIX}/${script_name}" || { echo "Failed to download ${script_name}"; exit 1; }
+	fi
+	if [ "${ENABLE_LOGGING}" == "true" ]; then
+		run_with_log "${script_name}" ${PARAMETERS}
+	else
+		bash "${script_name}" ${PARAMETERS} && EXIT_CODE=0 || EXIT_CODE=$?
+	fi
+	[ "${LOCAL_SCRIPTS}" == "true" ] || rm -f "${script_name}"
+	[ "${ENABLE_LOGGING}" != "true" ] || finish_log
+	exit ${EXIT_CODE}
+}
+
+if [ "$DOCKER" == "true" ]; then
+	run_script install.sh
 else
 	if [ -f /etc/redhat-release ] ; then
 		DIST=$(cat /etc/redhat-release |sed s/\ release.*//);
@@ -125,21 +174,9 @@ else
 			exit 1;
 		fi
 
-		if [ "${LOCAL_SCRIPTS}" == "true" ]; then
-			bash install-RedHat.sh ${PARAMETERS}
-		else
-			curl -s -O http://download.onlyoffice.com/install/install-RedHat.sh
-			bash install-RedHat.sh ${PARAMETERS}
-			rm install-RedHat.sh
-		fi
+		run_script install-RedHat.sh
 	elif [ -f /etc/debian_version ] ; then
-		if [ "${LOCAL_SCRIPTS}" == "true" ]; then
-			bash install-Debian.sh ${PARAMETERS}
-		else
-			curl -s -O http://download.onlyoffice.com/install/install-Debian.sh
-			bash install-Debian.sh ${PARAMETERS}
-			rm install-Debian.sh
-		fi
+		run_script install-Debian.sh
 	else
 		echo "Not supported OS";
 		exit 1;

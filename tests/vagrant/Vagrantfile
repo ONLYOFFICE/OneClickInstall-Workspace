@@ -8,6 +8,7 @@ Vagrant.configure("2") do |config|
              v.customize ["modifyvm", :id, "--memory", "#{ENV['RAM']}"] #<= total RAM.
              v.customize ["modifyvm", :id, "--cpus", "#{ENV['CPU']}"] #<= total CPU.
              v.customize ["modifyvm", :id, "--ioapic", "on"]
+             v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"] #<= resolve names via the host resolver.
     end
 
     config.vm.define 'ubuntu'

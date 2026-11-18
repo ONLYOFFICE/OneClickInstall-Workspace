@@ -47,7 +47,31 @@ enabled=1
 END
 }
 
+wait_dns() {
+  timeout "$1" bash -c 'until getent hosts download.onlyoffice.com >/dev/null; do sleep 2; done'
+}
+
+fix_dns() {
+  # Boxes may carry unreachable public DNS servers and strict DNSSEC, so use only the VirtualBox NAT DNS without DNSSEC
+  command -v resolvectl >/dev/null 2>&1 || return 0
+  local iface
+  iface=$(ip route show default | awk '{print $5; exit}')
+  mkdir -p /etc/systemd/resolved.conf.d
+  printf '[Resolve]\nDNS=\nDNS=10.0.2.3\nFallbackDNS=\nDNSSEC=no\n' > /etc/systemd/resolved.conf.d/zz-vbox-nat.conf
+  systemctl restart systemd-resolved
+  resolvectl dns "$iface" 10.0.2.3
+  resolvectl dnssec "$iface" no
+  resolvectl flush-caches
+}
+
 prepare_vm() {
+  wait_dns 30 || { fix_dns || true; wait_dns 60; } || {
+    echo "${COLOR_RED}download.onlyoffice.com cannot be resolved${COLOR_RESET}"
+    cat /etc/resolv.conf /etc/systemd/resolved.conf /etc/systemd/resolved.conf.d/* 2>/dev/null || true
+    resolvectl status 2>/dev/null || true; resolvectl query download.onlyoffice.com 2>&1 || true; getent hosts github.com || true
+    exit 1
+  }
+
   if ! command -v curl >/dev/null 2>&1; then
     (command -v apt-get >/dev/null 2>&1 && apt-get update -y && apt-get install -y curl) || (command -v dnf >/dev/null 2>&1 && dnf install -y curl)
   fi

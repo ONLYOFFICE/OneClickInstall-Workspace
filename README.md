@@ -81,6 +81,8 @@ sudo bash workspace-install.sh --help
 | `--installationtype`  | `GROUPS`\|`WORKSPACE`\|`WORKSPACE_ENTERPRISE` | `WORKSPACE_ENTERPRISE`   | Edition      |
 | `--update`            | `true` \| `false`                             | `false`                  | Update       |
 | `--skiphardwarecheck` | `true` \| `false`                             | `false`                  | Skip checks  |
+| `--makeswap`          | `true` \| `false`                             | `true`                   | Create swap file when RAM is below 16 GB |
+| `--logging`           | `true` \| `false`                             | `true`                   | Keep a log if installation fails |
 
 ### Docker flags
 > Applies only to Docker installation
@@ -113,7 +115,7 @@ sudo bash workspace-install.sh --help
 | `--installcontrolpanel`    | `true` \| `false` \| `pull`  | `true`                         | Install/skip/pull CP    |
 | `--useasexternalserver`    | `true` \| `false`            | `false`                        | Expose services         |
 | `--partnerdatafile`        | `<FILE>`                     | -                              | Partner data path       |
-| `--makeswap`               | `true` \| `false`            | `true`                         | Create swap file        |
+| `--noninteractive`         | `true` \| `false`            | `false`                        | Never ask questions (hardware check fails, Mail Server needs `--maildomain`) |
 | `--communityport`          | `<PORT>`                     | `80`                           | HTTP port for CS        |
 | `--mysqlhost`              | `<HOST>`                     | -                              | MySQL host              |
 | `--mysqlport`              | `<PORT>`                     | `3306`                         | MySQL port              |

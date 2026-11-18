@@ -9,17 +9,17 @@ cat<<EOF
 #######################################
 
 EOF
-apt-get -y update
+apt-get -o DPkg::Lock::Timeout=60 -y update
 
 if [ "$UPDATE" = "true" ] && [ "$CONTROL_PANEL_INSTALLED" = "true" ]; then
-	apt-get install -y --only-upgrade ${package_sysname}-controlpanel
+	apt-get -o DPkg::Lock::Timeout=60 install -y --only-upgrade ${package_sysname}-controlpanel
 fi
 
 if [ "$UPDATE" = "true" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then	
 	ds_pkg_installed_name=$(dpkg -l | grep ${package_sysname}-documentserver | tail -n1 | awk '{print $2}');
 
 	if [ "$INSTALLATION_TYPE" = "GROUPS" ]; then
-		apt-get remove -yq ${ds_pkg_installed_name};
+		apt-get -o DPkg::Lock::Timeout=60 remove -yq ${ds_pkg_installed_name};
 
 		DOCUMENT_SERVER_INSTALLED="false";
 		
@@ -37,16 +37,43 @@ if [ "$UPDATE" = "true" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "true" ]; then
 
 	if [ -n "$ds_pkg_name" ]; then
 		if ! dpkg -l ${ds_pkg_name} &> /dev/null; then
+			# The documentserver-ee postinst only connects to PostgreSQL, so the role and the database must exist before it
+			if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
+				# Keep the database settings the installed documentserver already has and fall back to the defaults only without them
+				ds_debconf_answer () { echo "GET $DS_COMMON_NAME/$1" | debconf-communicate 2>/dev/null | awk '$1 == 0 { sub(/^0 ?/, ""); print }'; }
+				DS_DB_NAME=${DS_DB_NAME:-$(ds_debconf_answer db-name)}
+				DS_DB_NAME=${DS_DB_NAME:-$DS_COMMON_NAME}
+				DS_DB_USER=${DS_DB_USER:-$(ds_debconf_answer db-user)}
+				DS_DB_USER=${DS_DB_USER:-$DS_COMMON_NAME}
+				DS_DB_PWD=${DS_DB_PWD:-$(ds_debconf_answer db-pwd)}
+				DS_DB_PWD=${DS_DB_PWD:-$DS_COMMON_NAME}
+
+				su - postgres -s /bin/bash -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname='${DS_DB_USER}'\"" | grep -q 1 || \
+					su - postgres -s /bin/bash -c "psql -c \"CREATE USER ${DS_DB_USER} WITH password '${DS_DB_PWD}';\""
+				su - postgres -s /bin/bash -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname='${DS_DB_NAME}'\"" | grep -q 1 || \
+					su - postgres -s /bin/bash -c "psql -c \"CREATE DATABASE ${DS_DB_NAME} OWNER ${DS_DB_USER};\""
+			fi
 			
 			debconf-get-selections | grep ^${ds_pkg_installed_name} | sed s/${ds_pkg_installed_name}/${ds_pkg_name}/g | debconf-set-selections
+
+			if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
+				echo ${ds_pkg_name} $DS_COMMON_NAME/db-pwd select $DS_DB_PWD | debconf-set-selections
+				echo ${ds_pkg_name} $DS_COMMON_NAME/db-user select $DS_DB_USER | debconf-set-selections
+				echo ${ds_pkg_name} $DS_COMMON_NAME/db-name select $DS_DB_NAME | debconf-set-selections
+			fi
 						
-			apt-get remove -yq ${ds_pkg_installed_name}
+			apt-get -o DPkg::Lock::Timeout=60 remove -yq ${ds_pkg_installed_name}
 			
-			apt-get install -yq ${ds_pkg_name}
+			apt-get -o DPkg::Lock::Timeout=60 install -yq ${ds_pkg_name}
 			
 			DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver	
 		else
-			apt-get install -y --only-upgrade ${ds_pkg_name};	
+			apt-get -o DPkg::Lock::Timeout=60 install -y --only-upgrade ${ds_pkg_name};	
+
+			# Re-apply the documentserver-ee settings (license path, trial) that communityserver skipped when configured earlier
+			if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ] && grep -Eq 'key="license\.file\.path"[[:space:]]+value[[:space:]]*=[[:space:]]*""' /var/www/${package_sysname}/WebStudio/web.appsettings.config; then
+				DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver
+			fi
 		fi				
 	fi
 fi
@@ -63,10 +90,12 @@ if [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 
 	if { [ "$MYSQL_SERVER_HOST" = "localhost" ] || [ "$MYSQL_SERVER_HOST" = "127.0.0.1" ]; } && \
 	   mysql -h"$MYSQL_SERVER_HOST" -u"$MYSQL_SERVER_USER" -p"$MYSQL_SERVER_PASS" -e ";" 2>&1 | grep -q "mysql_native_password"; then
-		systemctl stop mysql || { systemctl kill mysql; sleep 5; }
+		# A pending start job can cancel the stop, so repeat it until no mysqld is left
+		timeout 60 bash -c "while pgrep -x mysqld >/dev/null; do systemctl stop mysql 2>/dev/null || systemctl kill mysql; sleep 1; done"
 		mysqld --user=mysql --skip-grant-tables --skip-networking &
 		MYSQLD_TMP_PID=$!
 		wait_cmd mysqladmin ping --silent
+		kill -0 "$MYSQLD_TMP_PID" 2>/dev/null || { echo "Temporary mysqld failed to start"; exit 1; }
 		mysql -uroot -e "UPDATE mysql.user SET plugin='caching_sha2_password', authentication_string='' WHERE User='${MYSQL_SERVER_USER}';"
 		kill "$MYSQLD_TMP_PID" 2>/dev/null || true; wait "$MYSQLD_TMP_PID" 2>/dev/null || true
 
@@ -81,7 +110,7 @@ if [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 	CURRENT_VERSION=$(dpkg-query -W -f='${Version}' "${package_sysname}-communityserver")
 	AVAILABLE_VERSION=$(apt-cache show "${package_sysname}-communityserver" | awk '/Version:/{print $2}' | sort -V | tail -n 1)
 
-	apt-get install -o DPkg::options::="--force-confnew" -y --only-upgrade ${package_sysname}-communityserver elasticsearch=7.16.3
+	apt-get -o DPkg::Lock::Timeout=60 install -o DPkg::options::="--force-confnew" -y --only-upgrade ${package_sysname}-communityserver elasticsearch=7.16.3
 	
 	if [[ "$CURRENT_VERSION" = "$AVAILABLE_VERSION" ]] && [[ "$CURRENT_MYSQL_VERSION" != "$AVAILABLE_MYSQL_VERSION" ]]; then
 		DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver
@@ -89,7 +118,7 @@ if [ "$UPDATE" = "true" ] && [ "$COMMUNITY_SERVER_INSTALLED" = "true" ]; then
 fi
 
 if [ "$UPDATE" = "true" ] && [ "$XMPP_SERVER_INSTALLED" = "true" ]; then
-	apt-get install -y --only-upgrade ${package_sysname}-xmppserver
+	apt-get -o DPkg::Lock::Timeout=60 install -y --only-upgrade ${package_sysname}-xmppserver
 fi
 
 if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "false" ]; then
@@ -123,7 +152,7 @@ if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$DOCUMENT_SERVER_INSTALLED" = "fal
 		ds_pkg_name+="-ee"
 	fi
 	
-	apt-get install -yq "$ds_pkg_name"
+	apt-get -o DPkg::Lock::Timeout=60 install -yq "$ds_pkg_name"
 fi
 
 if [ "$CONTROL_PANEL_INSTALLED" = "false" ]; then
@@ -132,7 +161,7 @@ if [ "$CONTROL_PANEL_INSTALLED" = "false" ]; then
 	# setup default port
 	echo ${package_sysname}-controlpanel ${package_sysname}-controlpanel/port select $CP_PORT | sudo debconf-set-selections
 
-	apt-get install -yq ${package_sysname}-controlpanel
+	apt-get -o DPkg::Lock::Timeout=60 install -yq ${package_sysname}-controlpanel
 fi
 
 if [ "$COMMUNITY_SERVER_INSTALLED" = "false" ]; then
@@ -144,7 +173,7 @@ if [ "$COMMUNITY_SERVER_INSTALLED" = "false" ]; then
 	echo ${package_sysname} ${package_sysname}-communityserver/db-pwd select ${MYSQL_SERVER_PASS} | sudo debconf-set-selections
 	echo ${package_sysname} ${package_sysname}-communityserver/db-name select ${MYSQL_SERVER_DB_NAME} | sudo debconf-set-selections
 
-	apt-get install -yq ${package_sysname}-communityserver
+	apt-get -o DPkg::Lock::Timeout=60 install -yq ${package_sysname}-communityserver
 fi
 
 if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$XMPP_SERVER_INSTALLED" = "false" ]; then
@@ -153,7 +182,7 @@ if [ "$INSTALLATION_TYPE" != "GROUPS" ] && [ "$XMPP_SERVER_INSTALLED" = "false" 
 	echo ${package_sysname} ${package_sysname}-xmppserver/db-pwd select ${MYSQL_SERVER_PASS} | sudo debconf-set-selections
 	echo ${package_sysname} ${package_sysname}-xmppserver/db-name select ${MYSQL_SERVER_DB_NAME} | sudo debconf-set-selections
 
-	apt-get install -yq ${package_sysname}-xmppserver
+	apt-get -o DPkg::Lock::Timeout=60 install -yq ${package_sysname}-xmppserver
 	
 	DEBIAN_FRONTEND=noninteractive dpkg-reconfigure ${package_sysname}-communityserver
 
@@ -181,7 +210,7 @@ else
 	systemctl restart nginx
 fi
 
-make_swap
+[ "${MAKESWAP}" != "true" ] || make_swap_on_low_memory /app_swapfile
 
 echo ""
 echo "$RES_INSTALL_SUCCESS"
