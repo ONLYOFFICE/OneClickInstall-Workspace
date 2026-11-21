@@ -29,10 +29,10 @@ jobs:
     runs-on: self-hosted
     steps:
     - name: Checkout code      
-      uses: actions/checkout@v3
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
  
     - name: Set up Python 3.
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
       with:
         python-version: '3.x'
 
@@ -41,7 +41,7 @@ jobs:
 
     - name: Install from production scripts
       if: ${{ github.event_name == 'schedule' }}
-      uses: nick-fields/retry@v2
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4
       with:
         max_attempts: 2
         timeout_minutes: 180
@@ -64,7 +64,7 @@ jobs:
 
     - name: Install from local scripts
       if: ${{ github.event_name == 'pull_request' }}
-      uses: nick-fields/retry@v2
+      uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4
       with:
         max_attempts: 2
         timeout_minutes: 180
