@@ -37,7 +37,16 @@ fi
 
 # add nodejs repo
 NODEJS_MAJOR=24
-curl -fsSL https://deb.nodesource.com/setup_${NODEJS_MAJOR}.x | sed '/sleep/d' | bash -
+NODESOURCE_DEADLINE=$((SECONDS + 300))
+# Only an active one-line or deb822 entry counts, a commented-out line does not
+NODESOURCE_REPO_PATTERN="^[[:space:]]*(deb|URIs:)[[:space:]].*deb\.nodesource\.com/node_${NODEJS_MAJOR}\.x"
+# NodeSource exits with 0 even when its apt step fails, so success is judged by the repository it writes
+until grep -rEqs "$NODESOURCE_REPO_PATTERN" /etc/apt/sources.list.d/ \
+	|| { curl -fsSL --connect-timeout 10 --max-time 60 https://deb.nodesource.com/setup_${NODEJS_MAJOR}.x | sed '/sleep/d' | bash - && grep -rEqs "$NODESOURCE_REPO_PATTERN" /etc/apt/sources.list.d/; }; do
+	[ "$SECONDS" -lt "$NODESOURCE_DEADLINE" ] || { echo "Failed to add the NodeSource Node.js ${NODEJS_MAJOR} repository"; exit 1; }
+	echo "The NodeSource repository was not added, retrying..."
+	sleep 15
+done
 
 #add nginx repo
 if [[ ! "$DISTRIB_CODENAME" =~ ^(noble|trixie)$ ]]; then
@@ -134,6 +143,8 @@ apt-get -o DPkg::Lock::Timeout=60 install -o DPkg::options::="--force-confnew" -
 				nginx-extras \
 				expect \
 				dotnet-sdk-8.0
+
+[ "$(dpkg-query -W -f='${Version}' nodejs | cut -d. -f1)" = "${NODEJS_MAJOR}" ] || { echo "Node.js ${NODEJS_MAJOR} was not installed, check the NodeSource repository"; exit 1; }
 
 if [ "$INSTALLATION_TYPE" = "WORKSPACE_ENTERPRISE" ]; then
 	apt-get -o DPkg::Lock::Timeout=60 install -yq rabbitmq-server postgresql

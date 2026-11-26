@@ -36,7 +36,7 @@ jobs:
         sudo rm -rf /usr/local/lib/android || true
 
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
     - name: Get update and install vagrant
       working-directory: ${{ github.workspace }}
@@ -83,7 +83,7 @@ jobs:
 
     - name: Download hcp CLI
       if: success()
-      uses: hashicorp/hcp-setup-action@v0
+      uses: hashicorp/hcp-setup-action@fa6934c14c661dfbe9b6cf9c47ddb41759d625aa # v0
       with:
         version: latest
 
